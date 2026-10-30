@@ -1,0 +1,57 @@
+server {
+    listen ${PORT};
+    listen [::]:${PORT};
+    server_name _;
+
+    root /var/www/public;
+    index index.php;
+
+    charset utf-8;
+    client_max_body_size 12M;
+
+    access_log /dev/stdout;
+    error_log /dev/stderr warn;
+
+    # Fingerprinted Vite assets never change; cache them aggressively.
+    location /build/ {
+        try_files $uri =404;
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location /storage/ {
+        try_files $uri =404;
+        expires 30d;
+        add_header Cache-Control "public";
+    }
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include fastcgi_params;
+        # Debian's fastcgi_params collapses the port ($host); keep the full
+        # Host header so generated URLs work on local/custom ports too.
+        fastcgi_param HTTP_HOST $http_host;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+        fastcgi_pass 127.0.0.1:9000;
+        # Inertia/Vite adds a Link preload header per chunk; give the FastCGI
+        # buffer enough room so large pages do not fail with 502.
+        fastcgi_buffer_size 32k;
+        fastcgi_buffers 16 16k;
+        fastcgi_busy_buffers_size 32k;
+        fastcgi_read_timeout 60s;
+        fastcgi_buffering off;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+
+    location = /favicon.ico {
+        access_log off;
+        log_not_found off;
+    }
+}

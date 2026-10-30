@@ -1,0 +1,269 @@
+@import 'tailwindcss';
+
+@plugin 'tailwindcss-animate';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-display: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+    --radius-lg: var(--radius);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-sm: calc(var(--radius) - 4px);
+
+    /* Elegant Blue brand scale (PRD §5.2) */
+    --color-brand-50: #eff6ff;
+    --color-brand-100: #dbeafe;
+    --color-brand-200: #bfdbfe;
+    --color-brand-300: #93c5fd;
+    --color-brand-400: #60a5fa;
+    --color-brand-500: #3b82f6;
+    --color-brand-600: #2563eb;
+    --color-brand-700: #1e40af;
+    --color-brand-800: #1e3a8a;
+    --color-brand-900: #172554;
+
+    --color-navy: #0f172a;
+    --color-ink: #172033;
+    --color-ice: #f5f9ff;
+    --color-sky-surface: #dbeafe;
+    --color-success: #16a34a;
+    --color-warning: #d97706;
+    --color-danger: #dc2626;
+
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+
+    --color-sidebar: var(--sidebar-background);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+
+    --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12);
+    --shadow-card: 0 1px 3px rgb(15 23 42 / 0.05), 0 12px 32px -16px rgb(15 23 42 / 0.16);
+}
+
+:root {
+    --background: #ffffff;
+    --foreground: #172033;
+    --card: #ffffff;
+    --card-foreground: #172033;
+    --popover: #ffffff;
+    --popover-foreground: #172033;
+    --primary: #2563eb;
+    --primary-foreground: #ffffff;
+    --secondary: #f5f9ff;
+    --secondary-foreground: #172033;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
+    --accent: #dbeafe;
+    --accent-foreground: #1e40af;
+    --destructive: #dc2626;
+    --destructive-foreground: #ffffff;
+    --border: #e2e8f0;
+    --input: #cbd5e1;
+    --ring: #2563eb;
+    --radius: 0.75rem;
+    --chart-1: #2563eb;
+    --chart-2: #0ea5e9;
+    --chart-3: #1e40af;
+    --chart-4: #38bdf8;
+    --chart-5: #6366f1;
+    --sidebar-background: #ffffff;
+    --sidebar-foreground: #334155;
+    --sidebar-primary: #2563eb;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #eff6ff;
+    --sidebar-accent-foreground: #1e40af;
+    --sidebar-border: #e2e8f0;
+    --sidebar-ring: #2563eb;
+}
+
+/*
+ * The site and the admin panel are intentionally light-only. The starter kit
+ * shipped dark tokens that flipped form controls to navy whenever the visitor's
+ * OS preferred dark mode, while the page shells stayed white. Keeping a single
+ * light palette makes every input, select, and filter readable and consistent.
+ * `color-scheme: light` also keeps native widgets (date pickers, select popups,
+ * scrollbars) light on devices with a dark system preference.
+ */
+
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--border);
+    }
+
+    html {
+        scroll-behavior: smooth;
+        -webkit-text-size-adjust: 100%;
+        color-scheme: light;
+    }
+
+    body {
+        @apply bg-background font-sans text-foreground antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        @apply font-display text-balance;
+    }
+
+    :focus-visible {
+        @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+    }
+
+    ::selection {
+        background-color: var(--accent);
+        color: var(--accent-foreground);
+    }
+}
+
+@layer components {
+    .container-page {
+        @apply mx-auto w-full max-w-6xl px-5 sm:px-6 lg:px-8;
+    }
+
+    .section-y {
+        @apply py-14 sm:py-16 lg:py-24;
+    }
+
+    .eyebrow {
+        @apply text-xs font-semibold uppercase tracking-[0.18em] text-brand-600;
+    }
+
+    .prose-site {
+        @apply text-[0.975rem] leading-relaxed text-ink/80;
+    }
+
+    .prose-site p {
+        @apply mb-4;
+    }
+
+    .prose-site h2 {
+        @apply mt-10 mb-3 text-xl font-semibold text-navy;
+    }
+
+    .prose-site h3 {
+        @apply mt-8 mb-2 text-lg font-semibold text-navy;
+    }
+
+    .prose-site ul {
+        @apply mb-4 list-disc space-y-2 pl-5;
+    }
+
+    .prose-site a {
+        @apply font-medium text-brand-600 underline underline-offset-4 hover:text-brand-700;
+    }
+
+    .card-surface {
+        @apply rounded-2xl border border-border bg-card shadow-soft;
+    }
+
+    .link-arrow {
+        @apply inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700;
+    }
+
+    .field-label {
+        @apply mb-1.5 block text-sm font-medium text-ink;
+    }
+
+    .field-hint {
+        @apply mt-1 text-xs text-muted-foreground;
+    }
+
+    .table-shell {
+        @apply w-full border-collapse text-left text-sm;
+    }
+
+    .table-shell th {
+        @apply whitespace-nowrap border-b border-border bg-ice px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground;
+    }
+
+    .table-shell td {
+        @apply border-b border-border px-4 py-3 align-middle text-ink;
+    }
+}
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .hero-gradient {
+        background-image:
+            radial-gradient(70% 60% at 15% 0%, rgb(37 99 235 / 0.22), transparent 65%),
+            radial-gradient(55% 55% at 90% 10%, rgb(56 189 248 / 0.18), transparent 60%),
+            linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+    }
+
+    .grid-lines {
+        background-image:
+            linear-gradient(to right, rgb(255 255 255 / 0.045) 1px, transparent 1px),
+            linear-gradient(to bottom, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+        background-size: 48px 48px;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

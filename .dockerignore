@@ -1,0 +1,40 @@
+.DS_Store
+.git
+.github
+.gitignore
+.editorconfig
+.env
+.env.*
+.phpunit.result.cache
+.phpunit.cache
+.vscode
+.idea
+.fleet
+.zed
+
+# Dependencies and build output are produced inside the image
+node_modules
+vendor
+public/build
+public/hot
+public/storage
+bootstrap/ssr
+bootstrap/cache/*.php
+storage/app/public/*
+storage/logs/*
+storage/framework/*
+storage/pail
+
+# Local databases and test artefacts
+database/*.sqlite
+database/e2e.sqlite
+test-results
+playwright-report
+blob-report
+playwright/.cache
+tests
+playwright.config.ts
+
+# Documentation only
+README.md
+LICENSE
