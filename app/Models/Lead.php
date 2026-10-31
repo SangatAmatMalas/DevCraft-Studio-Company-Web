@@ -21,6 +21,7 @@ class Lead extends Model
         'service_type',
         'package_id',
         'portfolio_project_id',
+        'design_brief_id',
         'budget_range',
         'target_timeline',
         'preferred_contact',
@@ -50,6 +51,12 @@ class Lead extends Model
     public function portfolioProject(): BelongsTo
     {
         return $this->belongsTo(PortfolioProject::class);
+    }
+
+    /** @return BelongsTo<DesignBrief, $this> */
+    public function designBrief(): BelongsTo
+    {
+        return $this->belongsTo(DesignBrief::class);
     }
 
     /** @return HasMany<LeadNote, $this> */

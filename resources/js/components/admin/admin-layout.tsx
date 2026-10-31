@@ -73,6 +73,13 @@ const NAV: NavGroup[] = [
                 match: startsWith('/admin/leads'),
                 visible: canManageLeads,
             },
+            {
+                label: 'Preview desain',
+                href: '/admin/design-briefs',
+                icon: Sparkles,
+                match: startsWith('/admin/design-briefs'),
+                visible: canManageLeads,
+            },
         ],
     },
     {

@@ -74,6 +74,67 @@ export interface Paginated<T> {
     links?: { prev: string | null; next: string | null };
 }
 
+export interface DesignServiceItem {
+    title: string;
+    description: string | null;
+}
+
+export interface DesignContact {
+    whatsapp?: string;
+    email?: string;
+    city?: string;
+}
+
+export interface DesignBriefSummary {
+    token: string;
+    brand_name: string;
+    category_label: string;
+    template_label: string | null;
+    preview_url: string;
+}
+
+export interface DesignBriefContext {
+    token: string;
+    brand_name: string;
+    category_label: string;
+    template_label: string | null;
+    message_seed: string;
+}
+
+export interface DesignBriefPreview {
+    token: string;
+    brand_name: string;
+    tagline: string | null;
+    description: string | null;
+    category: string;
+    category_label: string;
+    style: string;
+    primary_color: string;
+    sections: string[];
+    services: DesignServiceItem[];
+    contact: DesignContact;
+    chosen: string | null;
+}
+
+export interface DesignVariant {
+    key: string;
+    label: string;
+    description: string;
+    best_for: string;
+    preview_url: string;
+    embed_url: string;
+}
+
+export interface DesignBriefResult extends Omit<DesignBriefPreview, 'description'> {
+    style_label: string;
+    variants: DesignVariant[];
+    chosen_label: string | null;
+    chosen_at: string | null;
+    expires_at: string | null;
+    lead_url: string;
+    packages_url: string;
+}
+
 export interface TechnologyTag {
     name: string;
     slug: string;

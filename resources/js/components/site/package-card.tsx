@@ -4,7 +4,15 @@ import { ArrowRight, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PackageCard as PackageCardType } from '@/types';
 
-export default function PackageCard({ package: pkg, className }: { package: PackageCardType; className?: string }) {
+export default function PackageCard({
+    package: pkg,
+    className,
+    designToken,
+}: {
+    package: PackageCardType;
+    className?: string;
+    designToken?: string | null;
+}) {
     return (
         <article
             className={cn(
@@ -45,7 +53,7 @@ export default function PackageCard({ package: pkg, className }: { package: Pack
             </ul>
 
             <div className="mt-6 flex flex-1 items-end">
-                <Link href={pkg.url} className="link-arrow">
+                <Link href={designToken ? `${pkg.url}?desain=${encodeURIComponent(designToken)}` : pkg.url} className="link-arrow">
                     Lihat detail paket
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>

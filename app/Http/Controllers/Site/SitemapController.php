@@ -21,6 +21,7 @@ class SitemapController extends Controller
             ['loc' => url('/portfolio'), 'changefreq' => 'weekly', 'priority' => '0.9'],
             ['loc' => url('/tentang-kami'), 'changefreq' => 'monthly', 'priority' => '0.6'],
             ['loc' => url('/kontak'), 'changefreq' => 'yearly', 'priority' => '0.6'],
+            ['loc' => url('/desain'), 'changefreq' => 'monthly', 'priority' => '0.8'],
         ]);
 
         Service::query()->published()->get(['slug', 'updated_at'])->each(function (Service $service) use ($urls) {
@@ -71,6 +72,8 @@ class SitemapController extends Controller
             'Allow: /',
             'Disallow: /admin',
             'Disallow: /admin/',
+            'Disallow: /desain/*/preview/',
+            'Disallow: /desain/*/pilih',
             '',
             'Sitemap: '.url('/sitemap.xml'),
         ];

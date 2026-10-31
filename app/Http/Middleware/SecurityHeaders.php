@@ -17,6 +17,13 @@ class SecurityHeaders
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
+        // Personalised design previews must never be indexed or cached by a
+        // shared proxy, even if the token leaks.
+        if ($request->is('desain/*')) {
+            $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+            $response->headers->set('Cache-Control', 'no-store, private');
+        }
+
         return $response;
     }
 }

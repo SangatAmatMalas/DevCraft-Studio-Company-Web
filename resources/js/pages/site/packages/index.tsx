@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowRight, Info } from 'lucide-react';
+import { ArrowRight, Info, Sparkles } from 'lucide-react';
 
 import Breadcrumbs from '@/components/site/breadcrumbs';
 import CtaBand from '@/components/site/cta-band';
@@ -9,9 +9,17 @@ import { Section, SectionHeading } from '@/components/site/section';
 import SeoHead from '@/components/site/seo-head';
 import SiteLayout from '@/components/site/site-layout';
 import { Button } from '@/components/ui/button';
-import type { PackageCard as PackageCardType, Seo, SharedProps } from '@/types';
+import type { DesignBriefSummary, PackageCard as PackageCardType, Seo, SharedProps } from '@/types';
 
-export default function PackagesIndex({ packages, seo }: { packages: PackageCardType[]; seo: Seo }) {
+export default function PackagesIndex({
+    packages,
+    designBrief,
+    seo,
+}: {
+    packages: PackageCardType[];
+    designBrief: DesignBriefSummary | null;
+    seo: Seo;
+}) {
     const { whatsapp } = usePage<SharedProps>().props;
 
     return (
@@ -43,11 +51,30 @@ export default function PackagesIndex({ packages, seo }: { packages: PackageCard
             </section>
 
             <Section tone="white">
+                {designBrief ? (
+                    <div className="mb-7 flex flex-col gap-3 rounded-2xl border border-brand-200 bg-brand-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-3">
+                            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" aria-hidden="true" />
+                            <div>
+                                <p className="text-sm font-semibold text-navy">
+                                    Paket untuk preview {designBrief.brand_name}
+                                    {designBrief.template_label ? ` · ${designBrief.template_label}` : ''}
+                                </p>
+                                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
+                                    Saat memilih paket, konteks desain Anda ikut dibawa ke formulir konsultasi.
+                                </p>
+                            </div>
+                        </div>
+                        <Link href={designBrief.preview_url} className="shrink-0 text-xs font-semibold text-brand-700 hover:underline">
+                            Kembali ke preview
+                        </Link>
+                    </div>
+                ) : null}
                 {packages.length > 0 ? (
                     <>
                         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                             {packages.map((pkg) => (
-                                <PackageCard key={pkg.id} package={pkg} />
+                                <PackageCard key={pkg.id} package={pkg} designToken={designBrief?.token} />
                             ))}
                         </div>
                         <div className="mt-8 flex items-start gap-3 rounded-xl border border-border bg-ice p-4 text-sm text-ink/75">

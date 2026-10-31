@@ -3,6 +3,7 @@
 use App\Http\Controllers\Site\AboutController;
 use App\Http\Controllers\Site\AnalyticsController;
 use App\Http\Controllers\Site\ContactController;
+use App\Http\Controllers\Site\DesignPreviewController;
 use App\Http\Controllers\Site\HomeController;
 use App\Http\Controllers\Site\PackageController;
 use App\Http\Controllers\Site\PageController;
@@ -30,6 +31,18 @@ Route::get('/kontak', [ContactController::class, 'show'])->name('kontak');
 Route::post('/kontak', [ContactController::class, 'store'])
     ->middleware('throttle:lead-submissions')
     ->name('kontak.store');
+
+// Template-based design previews (no AI, no uploads). Briefs are temporary
+// and never indexed; see SecurityHeaders for the noindex response header.
+Route::get('/desain', [DesignPreviewController::class, 'index'])->name('desain.index');
+Route::post('/desain', [DesignPreviewController::class, 'store'])
+    ->middleware('throttle:lead-submissions')
+    ->name('desain.store');
+Route::get('/desain/{brief}', [DesignPreviewController::class, 'result'])->name('desain.hasil');
+Route::get('/desain/{brief}/preview/{template}', [DesignPreviewController::class, 'preview'])->name('desain.preview');
+Route::post('/desain/{brief}/pilih', [DesignPreviewController::class, 'select'])
+    ->middleware('throttle:30,1')
+    ->name('desain.pilih');
 
 Route::post('/analytics/event', [AnalyticsController::class, 'store'])
     ->middleware('throttle:120,1')

@@ -21,6 +21,10 @@ class AnalyticsRecorder
         'email_click',
         'package_cta_click',
         'portfolio_cta_click',
+        'design_generated',
+        'design_selected',
+        'design_cta_lead',
+        'design_cta_packages',
     ];
 
     /** Metadata keys that are safe to persist (never personal data). */
@@ -35,6 +39,9 @@ class AnalyticsRecorder
         'source',
         'destination',
         'result_count',
+        'template',
+        'design_category',
+        'step',
     ];
 
     public static function record(Request $request, string $event, ?string $pagePath = null, ?string $entityType = null, ?int $entityId = null, array $metadata = []): void

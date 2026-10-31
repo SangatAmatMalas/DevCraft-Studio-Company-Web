@@ -1,5 +1,5 @@
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowRight, CheckCircle2, Mail, MessageCircle, ShieldCheck } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Mail, MessageCircle, ShieldCheck, Sparkles } from 'lucide-react';
 import { FormEvent, useEffect, useRef } from 'react';
 
 import Breadcrumbs from '@/components/site/breadcrumbs';
@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useAnalytics } from '@/hooks/use-analytics';
-import type { Seo, SharedProps } from '@/types';
+import type { DesignBriefContext, Seo, SharedProps } from '@/types';
 
 interface Prefill {
     package: { id: number; name: string } | null;
@@ -27,6 +27,7 @@ interface ContactProps {
     packages: { id: number; name: string; slug: string }[];
     projects: { id: number; title: string; slug: string }[];
     prefill: Prefill;
+    designBrief: DesignBriefContext | null;
     whatsappUrl: string | null;
     seo: Seo;
 }
@@ -48,7 +49,7 @@ const TIMELINE_OPTIONS = [
     'Belum ditentukan',
 ];
 
-export default function Contact({ services, packages, projects, prefill, whatsappUrl, seo }: ContactProps) {
+export default function Contact({ services, packages, projects, prefill, designBrief, whatsappUrl, seo }: ContactProps) {
     const { site, flash } = usePage<SharedProps>().props;
     const { track } = useAnalytics();
     const startedTracked = useRef(false);
@@ -64,7 +65,8 @@ export default function Contact({ services, packages, projects, prefill, whatsap
         budget_range: '',
         target_timeline: '',
         preferred_contact: 'email',
-        message: '',
+        message: designBrief?.message_seed ?? '',
+        design_brief: designBrief?.token ?? '',
         privacy_consent: false as boolean,
         source_url: '',
         source_type: prefill.source_type,
@@ -115,6 +117,12 @@ export default function Contact({ services, packages, projects, prefill, whatsap
         prefill.package ? { label: 'Paket', value: prefill.package.name } : null,
         prefill.project ? { label: 'Referensi proyek', value: prefill.project.title } : null,
         prefill.service ? { label: 'Layanan', value: prefill.service.title } : null,
+        designBrief
+            ? {
+                  label: 'Preview desain',
+                  value: `${designBrief.brand_name} · ${designBrief.category_label}${designBrief.template_label ? ` · ${designBrief.template_label}` : ''}`,
+              }
+            : null,
     ].filter(Boolean) as { label: string; value: string }[];
 
     if (flash.lead_submitted) {
@@ -163,9 +171,13 @@ export default function Contact({ services, packages, projects, prefill, whatsap
             <section className="section-y bg-white">
                 <div className="container-page grid gap-10 lg:grid-cols-[1.5fr_0.85fr]">
                     <form onSubmit={submit} onFocusCapture={markStarted} className="rounded-2xl border border-border bg-white p-6 shadow-soft sm:p-8" noValidate>
+                        {designBrief ? <input type="hidden" name="design_brief" value={form.data.design_brief} /> : null}
                         {contextItems.length > 0 ? (
                             <div className="mb-6 rounded-xl border border-brand-100 bg-brand-50/70 p-4">
-                                <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">Konteks permintaan</p>
+                                <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-brand-700">
+                                    {designBrief ? <Sparkles className="h-3.5 w-3.5" aria-hidden="true" /> : null}
+                                    Konteks permintaan
+                                </p>
                                 <dl className="mt-2 space-y-1 text-sm text-ink/80">
                                     {contextItems.map((item) => (
                                         <div key={item.label} className="flex gap-1.5">

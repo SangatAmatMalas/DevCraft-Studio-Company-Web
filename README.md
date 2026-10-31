@@ -353,12 +353,28 @@ Simpan backup di lokasi terpisah dari server, enkripsi bila memuat data lead, da
 - Form publik memakai CSRF, honeypot (`website`), validasi ketat, dan rate limit `lead-submissions` (5/10 menit, 30/hari per IP).
 - Data lead menyimpan `ip_hash`, bukan IP mentah, dan tidak boleh diekspor ke pihak ketiga.
 - Header keamanan dasar dipasang `SecurityHeaders` (nosniff, SAMEORIGIN, referrer policy, permissions policy).
+- Preview desain memakai token UUID yang tidak mudah ditebak, berlaku 30 hari, dikirim dengan `noindex,nofollow` dan `Cache-Control: no-store`; preview yang sudah menjadi lead tetap disimpan untuk konteks sales.
 - Kata sandi SMTP dienkripsi (`Crypt`) di tabel `settings`.
 - Aktivitas penting dicatat di `activity_logs` (tanpa isi brief lengkap).
 
 ---
 
-## 10. Pengujian
+## 10. Generator preview desain
+
+Halaman publik **`/desain`** memungkinkan calon klien mengisi brief singkat dan langsung membandingkan tiga layout deterministik: **Bold Hero**, **Editorial Split**, dan **Grid Catalog**. Kategori awal yang tersedia adalah company profile, katalog produk, portfolio, landing page, dan klinik.
+
+- Tidak memakai AI, unggahan file, atau screenshot generation; preview dirender dari komponen template React.
+- Pengunjung dapat memilih satu desain, lalu memilih secara setara antara **konsultasi** (`/kontak?desain=...`) atau **melihat paket** (`/paket?desain=...`). Email hanya diminta pada jalur konsultasi.
+- Admin dengan izin leads dapat melihat brief di **Admin → Preview desain** dan melihat konteks pilihan desain pada detail lead.
+- Brief anonim yang sudah kedaluwarsa dapat dibersihkan dengan:
+
+```bash
+php artisan app:prune-design-briefs
+```
+
+Jalankan perintah tersebut dari scheduler harian di production. Gunakan `--days=30` untuk mengganti masa retensi ketika diperlukan.
+
+## 11. Pengujian
 
 ```bash
 php artisan test
@@ -367,7 +383,7 @@ npm run build:ssr
 npm run test:e2e     # Playwright: build + disposable SQLite + server
 ```
 
-Cakupan tes saat ini: autentikasi & akun nonaktif, matriks peran/Gate, CRUD layanan/portfolio (termasuk baris repeater kosong), aturan harga paket + placeholder, visibilitas draft/testimoni/tim, formulir lead (validasi, honeypot, rate limit, catatan, ekspor CSV), halaman publik, sitemap, halaman error, dan perintah `app:verify-placeholders`. E2E Playwright mencakup perbandingan paket, admin membuat & memublikasikan proyek, serta visitor mengirim brief lalu admin menindaklanjutinya.
+Cakupan tes saat ini: autentikasi & akun nonaktif, matriks peran/Gate, CRUD layanan/portfolio (termasuk baris repeater kosong), aturan harga paket + placeholder, visibilitas draft/testimoni/tim, formulir lead (validasi, honeypot, rate limit, catatan, ekspor CSV), generator preview desain (tiga varian, noindex, pemilihan, dan atribusi lead), halaman publik, sitemap, halaman error, dan perintah `app:verify-placeholders`. E2E Playwright mencakup perbandingan paket, admin membuat & memublikasikan proyek, serta visitor mengirim brief lalu admin menindaklanjutinya.
 
 Checklist manual sebelum go-live:
 
@@ -382,7 +398,7 @@ Checklist manual sebelum go-live:
 
 ---
 
-## 11. Lisensi & atribusi
+## 12. Lisensi & atribusi
 
 Kode aplikasi ini menggunakan lisensi MIT.
 

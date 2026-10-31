@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Site;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLeadRequest;
+use App\Models\DesignBrief;
 use App\Models\Lead;
 use App\Models\Package;
 use App\Models\PortfolioProject;
@@ -39,6 +40,19 @@ class ContactController extends Controller
 
         $services = Service::query()->published()->ordered()->get(['id', 'title', 'slug']);
 
+        $brief = $this->designBrief($request);
+
+        if ($brief) {
+            AnalyticsRecorder::record(
+                $request,
+                'design_cta_lead',
+                '/kontak',
+                'design_brief',
+                $brief->id,
+                ['template' => $brief->chosen_template, 'design_category' => $brief->category, 'source' => 'preview'],
+            );
+        }
+
         return Inertia::render('site/contact', [
             'services' => $services->map(fn (Service $item) => ['title' => $item->title, 'slug' => $item->slug])->all(),
             'packages' => Package::query()->published()->ordered()->get(['id', 'name', 'slug'])
@@ -51,8 +65,17 @@ class ContactController extends Controller
                 'package' => $package ? ['id' => $package->id, 'name' => $package->name] : null,
                 'project' => $project ? ['id' => $project->id, 'title' => $project->title] : null,
                 'service' => $service ? ['title' => $service->title] : null,
-                'source_type' => $package ? 'package' : ($project ? 'portfolio' : ($service ? 'service' : 'contact_page')),
+                'source_type' => $brief ? 'design_preview' : ($package ? 'package' : ($project ? 'portfolio' : ($service ? 'service' : 'contact_page'))),
             ],
+            'designBrief' => $brief ? [
+                'token' => $brief->token,
+                'brand_name' => $brief->brand_name,
+                'category_label' => $brief->categoryLabel(),
+                'template_label' => $brief->chosen_template ? $brief->templateLabel() : null,
+                'message_seed' => 'Saya sudah mencoba preview desain '.$brief->brand_name
+                    .($brief->chosen_template ? ' dengan gaya '.$brief->templateLabel() : '')
+                    .'. Saya ingin mendiskusikan penerapannya untuk website saya.',
+            ] : null,
             'whatsappUrl' => WhatsAppLink::url(),
             'seo' => Seo::make(
                 'Kontak',
@@ -66,6 +89,7 @@ class ContactController extends Controller
     {
         $package = $request->package();
         $project = $request->project();
+        $brief = $this->designBrief($request);
 
         $lead = Lead::query()->create([
             'name' => $request->string('name')->toString(),
@@ -75,16 +99,24 @@ class ContactController extends Controller
             'service_type' => $request->input('service_type'),
             'package_id' => $package?->id,
             'portfolio_project_id' => $project?->id,
+            'design_brief_id' => $brief?->id,
             'budget_range' => $request->input('budget_range'),
             'target_timeline' => $request->input('target_timeline'),
             'preferred_contact' => $request->input('preferred_contact', 'email'),
             'message' => $request->string('message')->toString(),
             'source_url' => $request->input('source_url') ?: url()->previous(),
-            'source_type' => $request->input('source_type') ?: $request->input('preferred_contact', 'contact_page'),
+            'source_type' => $brief ? 'design_preview' : ($request->input('source_type') ?: 'contact_page'),
             'status' => 'new',
             'privacy_consent_at' => now(),
             'ip_hash' => hash('sha256', ($request->ip() ?? 'unknown').config('app.key')),
         ]);
+
+        if ($brief) {
+            $brief->forceFill([
+                'lead_id' => $lead->id,
+                'status' => 'claimed',
+            ])->save();
+        }
 
         AnalyticsRecorder::record(
             $request,
@@ -96,6 +128,8 @@ class ContactController extends Controller
                 'package_slug' => $package?->slug,
                 'project_slug' => $project?->slug,
                 'source' => $request->input('source_type'),
+                'template' => $brief?->chosen_template,
+                'design_category' => $brief?->category,
             ]),
         );
 
@@ -105,5 +139,19 @@ class ContactController extends Controller
             ->route('kontak')
             ->with('success', 'Terima kasih. Brief Anda sudah kami terima dan akan ditinjau oleh tim DevCraft Studio.')
             ->with('lead_submitted', true);
+    }
+
+    private function designBrief(Request $request): ?DesignBrief
+    {
+        $token = $request->input('design_brief') ?: $request->query('desain');
+
+        if (! is_string($token) || $token === '') {
+            return null;
+        }
+
+        return DesignBrief::query()
+            ->active()
+            ->where('token', $token)
+            ->first();
     }
 }

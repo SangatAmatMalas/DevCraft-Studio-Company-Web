@@ -12,6 +12,7 @@ const NAV = [
     { label: 'Beranda', href: '/' },
     { label: 'Layanan', href: '/layanan' },
     { label: 'Paket', href: '/paket' },
+    { label: 'Coba Desain', href: '/desain' },
     { label: 'Portfolio', href: '/portfolio' },
     { label: 'Tentang Kami', href: '/tentang-kami' },
     { label: 'Kontak', href: '/kontak' },

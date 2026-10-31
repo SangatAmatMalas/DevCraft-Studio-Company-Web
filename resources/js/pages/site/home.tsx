@@ -105,7 +105,10 @@ export default function Home({ services, projects, packages, faqs, testimonials,
                                 variant="outline"
                                 className="rounded-xl border-white/25 bg-transparent px-6 text-white hover:bg-white/10 hover:text-white"
                             >
-                                <Link href="/portfolio">Lihat portfolio</Link>
+                                <Link href="/desain">
+                                    Coba desain website
+                                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                                </Link>
                             </Button>
                         </div>
 

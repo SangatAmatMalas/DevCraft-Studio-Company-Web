@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DesignBriefController;
 use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\LeadController;
 use App\Http\Controllers\Admin\MediaController;
@@ -61,6 +62,8 @@ Route::middleware(['auth', 'active'])
             Route::get('/leads/{lead}', [LeadController::class, 'show'])->name('leads.show');
             Route::patch('/leads/{lead}', [LeadController::class, 'update'])->name('leads.update');
             Route::post('/leads/{lead}/notes', [LeadController::class, 'storeNote'])->name('leads.notes.store');
+
+            Route::get('/design-briefs', [DesignBriefController::class, 'index'])->name('design-briefs.index');
         });
 
         Route::get('/activity-logs', [ActivityLogController::class, 'index'])

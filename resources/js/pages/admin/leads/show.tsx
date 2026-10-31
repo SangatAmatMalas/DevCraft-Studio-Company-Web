@@ -1,5 +1,5 @@
 import { Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, Mail, MessageCircle, Save, User } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ExternalLink, Mail, MessageCircle, Save, Sparkles, User } from 'lucide-react';
 import { FormEvent } from 'react';
 
 import AdminLayout from '@/components/admin/admin-layout';
@@ -31,6 +31,14 @@ interface LeadDetail {
     created_at: string | null;
     package: { name: string; slug: string } | null;
     project: { title: string; slug: string } | null;
+    design_brief: {
+        token: string;
+        brand_name: string;
+        category_label: string;
+        style_label: string;
+        chosen_label: string | null;
+        result_url: string;
+    } | null;
     notes: { id: number; note: string; author: string; created_at: string | null }[];
 }
 
@@ -127,6 +135,33 @@ export default function LeadShow({ lead, statuses }: { lead: LeadDetail; statuse
                                 <dd className="mt-0.5 text-sm text-ink">{lead.organization ?? '—'}</dd>
                             </div>
                         </dl>
+
+                        {lead.design_brief ? (
+                            <div className="mt-5 rounded-xl border border-brand-200 bg-brand-50/60 p-4">
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                    <div>
+                                        <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-brand-700">
+                                            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                                            Dari preview desain
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold text-navy">{lead.design_brief.brand_name}</p>
+                                        <p className="mt-0.5 text-xs text-muted-foreground">
+                                            {lead.design_brief.category_label} · {lead.design_brief.style_label}
+                                            {lead.design_brief.chosen_label ? ` · ${lead.design_brief.chosen_label}` : ''}
+                                        </p>
+                                    </div>
+                                    <a
+                                        href={lead.design_brief.result_url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline"
+                                    >
+                                        Buka preview
+                                        <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
+                                    </a>
+                                </div>
+                            </div>
+                        ) : null}
 
                         {context.length > 0 ? (
                             <dl className="mt-5 grid gap-3 rounded-xl border border-border bg-ice p-4 sm:grid-cols-2">

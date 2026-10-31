@@ -71,7 +71,7 @@ class LeadController extends Controller
 
     public function show(Lead $lead): Response
     {
-        $lead->load(['package:id,name,slug', 'portfolioProject:id,title,slug', 'notes.user:id,name']);
+        $lead->load(['package:id,name,slug', 'portfolioProject:id,title,slug', 'designBrief', 'notes.user:id,name']);
 
         return Inertia::render('admin/leads/show', [
             'lead' => [
@@ -93,6 +93,14 @@ class LeadController extends Controller
                 'created_at' => $lead->created_at?->toIso8601String(),
                 'package' => $lead->package ? ['name' => $lead->package->name, 'slug' => $lead->package->slug] : null,
                 'project' => $lead->portfolioProject ? ['title' => $lead->portfolioProject->title, 'slug' => $lead->portfolioProject->slug] : null,
+                'design_brief' => $lead->designBrief ? [
+                    'token' => $lead->designBrief->token,
+                    'brand_name' => $lead->designBrief->brand_name,
+                    'category_label' => $lead->designBrief->categoryLabel(),
+                    'style_label' => $lead->designBrief->styleLabel(),
+                    'chosen_label' => $lead->designBrief->chosen_template ? $lead->designBrief->templateLabel() : null,
+                    'result_url' => $lead->designBrief->resultUrl(),
+                ] : null,
                 'notes' => $lead->notes->map(fn (LeadNote $note) => [
                     'id' => $note->id,
                     'note' => $note->note,

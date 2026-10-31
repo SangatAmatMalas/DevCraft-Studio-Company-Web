@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ArrowRight, Check, MessageCircle, Minus } from 'lucide-react';
+import { ArrowRight, Check, MessageCircle, Minus, Sparkles } from 'lucide-react';
 import { useEffect } from 'react';
 
 import Breadcrumbs from '@/components/site/breadcrumbs';
@@ -9,9 +9,19 @@ import SeoHead from '@/components/site/seo-head';
 import SiteLayout from '@/components/site/site-layout';
 import { Button } from '@/components/ui/button';
 import { useAnalytics } from '@/hooks/use-analytics';
-import type { PackageCard as PackageCardType, PackageDetail, Seo, SharedProps } from '@/types';
+import type { DesignBriefSummary, PackageCard as PackageCardType, PackageDetail, Seo, SharedProps } from '@/types';
 
-export default function PackageShow({ package: pkg, otherPackages, seo }: { package: PackageDetail; otherPackages: PackageCardType[]; seo: Seo }) {
+export default function PackageShow({
+    package: pkg,
+    otherPackages,
+    designBrief,
+    seo,
+}: {
+    package: PackageDetail;
+    otherPackages: PackageCardType[];
+    designBrief: DesignBriefSummary | null;
+    seo: Seo;
+}) {
     const { whatsapp } = usePage<SharedProps>().props;
     const { track } = useAnalytics();
 
@@ -20,7 +30,7 @@ export default function PackageShow({ package: pkg, otherPackages, seo }: { pack
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pkg.id]);
 
-    const consultationHref = `/kontak?paket=${pkg.slug}`;
+    const consultationHref = `/kontak?paket=${pkg.slug}${designBrief ? `&desain=${encodeURIComponent(designBrief.token)}` : ''}`;
 
     return (
         <SiteLayout>
@@ -31,6 +41,18 @@ export default function PackageShow({ package: pkg, otherPackages, seo }: { pack
                     <Breadcrumbs
                         items={[{ label: 'Beranda', href: '/' }, { label: 'Paket', href: '/paket' }, { label: pkg.name }]}
                     />
+                    {designBrief ? (
+                        <div className="mt-5 flex flex-wrap items-center gap-2 rounded-xl border border-brand-200 bg-brand-50/60 px-4 py-3 text-xs text-ink/75">
+                            <Sparkles className="h-4 w-4 text-brand-600" aria-hidden="true" />
+                            <span>
+                                Anda sedang melihat paket untuk preview <strong className="text-navy">{designBrief.brand_name}</strong>
+                                {designBrief.template_label ? ` (${designBrief.template_label})` : ''}.
+                            </span>
+                            <Link href={designBrief.preview_url} className="font-semibold text-brand-700 hover:underline">
+                                Lihat preview
+                            </Link>
+                        </div>
+                    ) : null}
                     <div className="mt-5 grid gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-end">
                         <div>
                             {pkg.target_audience ? (
