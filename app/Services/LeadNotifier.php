@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Mail\LeadReceivedConfirmation;
 use App\Mail\NewLeadNotification;
 use App\Models\Lead;
 use App\Support\Settings;
@@ -25,6 +26,28 @@ class LeadNotifier
             Mail::to($recipient)->send(new NewLeadNotification($lead));
         } catch (Throwable $exception) {
             Log::warning('Lead notification could not be sent.', [
+                'lead_id' => $lead->id,
+                'exception' => $exception->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Send the lead a short confirmation so they know the brief arrived.
+     * Skips leads that only shared a phone number.
+     */
+    public static function sendConfirmation(Lead $lead): void
+    {
+        if (blank($lead->email)) {
+            return;
+        }
+
+        self::applyMailSettings();
+
+        try {
+            Mail::to($lead->email)->send(new LeadReceivedConfirmation($lead));
+        } catch (Throwable $exception) {
+            Log::warning('Lead confirmation could not be sent.', [
                 'lead_id' => $lead->id,
                 'exception' => $exception->getMessage(),
             ]);

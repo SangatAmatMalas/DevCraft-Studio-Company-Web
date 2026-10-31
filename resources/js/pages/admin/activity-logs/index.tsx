@@ -38,6 +38,7 @@ const ACTION_LABELS: Record<string, string> = {
     'portfolio.unpublished': 'Proyek dijadikan draft',
     'lead.status_changed': 'Status lead diubah',
     'lead.note_added': 'Catatan lead ditambah',
+    'lead.attachment_downloaded': 'Lampiran lead diunduh',
     'lead.exported': 'Lead diekspor',
     'faq.created': 'FAQ dibuat',
     'faq.updated': 'FAQ diperbarui',

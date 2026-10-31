@@ -1,13 +1,16 @@
 import { Link } from '@inertiajs/react';
 import {
+    AlertTriangle,
     ArrowUpRight,
     BarChart3,
+    CalendarClock,
     FolderOpen,
     Inbox,
     Layers,
     MessageSquare,
     Package,
     Plus,
+    Target,
     TrendingUp,
 } from 'lucide-react';
 
@@ -28,9 +31,28 @@ interface DashboardProps {
         packages_published: number;
         brief_submissions_30_days: number;
         contact_clicks_30_days: number;
+        follow_up_due: number;
     };
     leadsByStatus: { status: string; label: string; tone: string; total: number }[];
     leadTrend: { label: string; total: number }[];
+    conversion: {
+        window_days: number;
+        page_view_sessions: number;
+        brief_start_sessions: number;
+        brief_submit_sessions: number;
+        view_to_start: number | null;
+        start_to_submit: number | null;
+        view_to_submit: number | null;
+    };
+    followUpLeads: {
+        id: number;
+        name: string;
+        context: string | null;
+        status_label: string;
+        next_follow_up_at: string | null;
+        created_at: string | null;
+    }[];
+    notifications: { mail_configured: boolean };
     recentLeads: {
         id: number;
         name: string;
@@ -59,7 +81,7 @@ const EVENT_LABELS: Record<string, string> = {
     portfolio_cta_click: 'CTA portfolio',
 };
 
-export default function Dashboard({ stats, leadsByStatus, leadTrend, recentLeads, analytics }: DashboardProps) {
+export default function Dashboard({ stats, leadsByStatus, leadTrend, recentLeads, followUpLeads, conversion, notifications, analytics }: DashboardProps) {
     const maxTrend = Math.max(1, ...leadTrend.map((item) => item.total));
     const funnel = leadsByStatus.filter((item) => item.status !== 'archived');
     const maxFunnel = Math.max(1, ...funnel.map((item) => item.total));
@@ -68,7 +90,7 @@ export default function Dashboard({ stats, leadsByStatus, leadTrend, recentLeads
         {
             label: 'Lead baru',
             value: stats.leads_new,
-            hint: `${stats.leads_total} total lead`,
+            hint: `${stats.leads_total} total · ${stats.follow_up_due} perlu follow-up`,
             icon: Inbox,
             href: '/admin/leads?status=new',
             accent: 'text-brand-600 bg-brand-50',
@@ -96,6 +118,24 @@ export default function Dashboard({ stats, leadsByStatus, leadTrend, recentLeads
             icon: MessageSquare,
             href: '/admin/settings',
             accent: 'text-amber-600 bg-amber-50',
+        },
+    ];
+
+    const conversionRows = [
+        {
+            label: 'Halaman dilihat → brief dimulai',
+            value: conversion.view_to_start,
+            detail: `${conversion.brief_start_sessions} dari ${conversion.page_view_sessions} sesi`,
+        },
+        {
+            label: 'Brief dimulai → brief dikirim',
+            value: conversion.start_to_submit,
+            detail: `${conversion.brief_submit_sessions} dari ${conversion.brief_start_sessions} sesi`,
+        },
+        {
+            label: 'Halaman dilihat → brief dikirim',
+            value: conversion.view_to_submit,
+            detail: `${conversion.brief_submit_sessions} dari ${conversion.page_view_sessions} sesi`,
         },
     ];
 
@@ -136,6 +176,92 @@ export default function Dashboard({ stats, leadsByStatus, leadTrend, recentLeads
                         <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
                     </Link>
                 ))}
+            </div>
+
+            {!notifications.mail_configured ? (
+                <div className="mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
+                    <div>
+                        <p className="font-semibold text-amber-900">Notifikasi email belum aktif</p>
+                        <p className="mt-0.5 leading-relaxed text-amber-800">
+                            Lead tetap tersimpan dan muncul di dashboard ini. Atur SMTP di{' '}
+                            <Link href="/admin/settings" className="font-medium underline underline-offset-4">
+                                Pengaturan
+                            </Link>{' '}
+                            agar tim juga menerima email saat brief masuk.
+                        </p>
+                    </div>
+                </div>
+            ) : null}
+
+            <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_1fr]">
+                <Panel
+                    title="Rasio konversi 30 hari"
+                    description="Dihitung dari sesi anonim, bukan jumlah orang unik."
+                >
+                    <ul className="space-y-4">
+                        {conversionRows.map((row) => (
+                            <li key={row.label}>
+                                <div className="flex items-center justify-between gap-3 text-xs">
+                                    <span className="flex items-center gap-1.5 font-medium text-ink">
+                                        <Target className="h-3.5 w-3.5 text-brand-600" aria-hidden="true" />
+                                        {row.label}
+                                    </span>
+                                    <span className="font-display text-sm font-bold text-navy">
+                                        {row.value === null ? '—' : `${row.value}%`}
+                                    </span>
+                                </div>
+                                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-ice">
+                                    <div
+                                        className="h-full rounded-full bg-brand-500"
+                                        style={{ width: `${Math.min(100, row.value ?? 0)}%` }}
+                                    />
+                                </div>
+                                <p className="mt-1 text-[0.65rem] text-muted-foreground">{row.detail}</p>
+                            </li>
+                        ))}
+                    </ul>
+                    <p className="mt-4 border-t border-border pt-3 text-[0.7rem] leading-relaxed text-muted-foreground">
+                        Angka kecil adalah hal normal untuk situs studio. Fokus pada perubahan antarperiode, bukan nilai absolutnya.
+                    </p>
+                </Panel>
+
+                <Panel
+                    title="Perlu ditindaklanjuti"
+                    description="Sudah lewat jadwal atau menunggu lebih dari 3 hari."
+                    actions={
+                        <Link href="/admin/leads?follow_up=due" className="link-arrow text-xs">
+                            Semua
+                            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
+                        </Link>
+                    }
+                    bodyClassName="p-0"
+                >
+                    {followUpLeads.length > 0 ? (
+                        <ul className="divide-y divide-border">
+                            {followUpLeads.map((lead) => (
+                                <li key={lead.id} className="flex items-start justify-between gap-3 px-5 py-3">
+                                    <div className="min-w-0">
+                                        <Link href={`/admin/leads/${lead.id}`} className="text-sm font-medium text-navy hover:text-brand-700">
+                                            {lead.name}
+                                        </Link>
+                                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                            {lead.context ?? lead.status_label}
+                                        </p>
+                                    </div>
+                                    <span className="flex shrink-0 items-center gap-1 text-[0.7rem] text-danger">
+                                        <CalendarClock className="h-3.5 w-3.5" aria-hidden="true" />
+                                        {lead.next_follow_up_at ? formatDateTime(lead.next_follow_up_at) : 'Belum dijadwalkan'}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="px-5 py-8 text-center text-sm text-muted-foreground">
+                            Tidak ada lead yang perlu ditindaklanjuti.
+                        </p>
+                    )}
+                </Panel>
             </div>
 
             <div className="mt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">

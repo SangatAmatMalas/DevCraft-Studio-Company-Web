@@ -60,6 +60,7 @@ Route::middleware(['auth', 'active'])
             Route::get('/leads', [LeadController::class, 'index'])->name('leads.index');
             Route::get('/leads/export', [LeadController::class, 'export'])->name('leads.export');
             Route::get('/leads/{lead}', [LeadController::class, 'show'])->name('leads.show');
+            Route::get('/leads/{lead}/attachments/{attachment}', [LeadController::class, 'downloadAttachment'])->name('leads.attachments.download');
             Route::patch('/leads/{lead}', [LeadController::class, 'update'])->name('leads.update');
             Route::post('/leads/{lead}/notes', [LeadController::class, 'storeNote'])->name('leads.notes.store');
 

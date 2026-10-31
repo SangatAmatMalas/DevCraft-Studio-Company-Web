@@ -20,6 +20,8 @@ interface LeadRow {
     status_label: string;
     tone: string;
     context: string | null;
+    next_follow_up_at: string | null;
+    follow_up_due: boolean;
     created_at: string | null;
 }
 
@@ -29,7 +31,7 @@ export default function LeadsIndex({
     statuses,
 }: {
     leads: { data: LeadRow[]; meta: { current_page: number; last_page: number; total: number } };
-    filters: { q: string; status: string; from: string; to: string };
+    filters: { q: string; status: string; follow_up: string; from: string; to: string };
     statuses: Record<string, string>;
 }) {
     const [term, setTerm] = useState(filters.q);
@@ -66,7 +68,7 @@ export default function LeadsIndex({
             breadcrumbs={[{ label: 'Leads' }]}
         >
             <Panel bodyClassName="p-4 sm:p-5">
-                <form onSubmit={submit} className="grid gap-2 sm:grid-cols-[1fr_auto_auto_auto]" role="search">
+                <form onSubmit={submit} className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_auto_auto_auto_auto]" role="search">
                     <div className="relative">
                         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
                         <Input
@@ -90,6 +92,16 @@ export default function LeadsIndex({
                                 {label}
                             </option>
                         ))}
+                    </NativeSelect>
+
+                    <NativeSelect
+                        value={filters.follow_up}
+                        onChange={(event) => query({ follow_up: event.target.value })}
+                        aria-label="Filter follow-up"
+                        className="w-full sm:w-auto"
+                    >
+                        <option value="">Semua lead</option>
+                        <option value="due">Perlu follow-up</option>
                     </NativeSelect>
 
                     <div className="flex items-center gap-2">
@@ -132,6 +144,7 @@ export default function LeadsIndex({
                                         <th>Organisasi</th>
                                         <th>Konteks</th>
                                         <th>Status</th>
+                                        <th>Follow-up</th>
                                         <th>Masuk</th>
                                         <th className="text-right">Aksi</th>
                                     </tr>
@@ -149,6 +162,17 @@ export default function LeadsIndex({
                                             <td className="text-xs text-muted-foreground">{lead.context ?? '—'}</td>
                                             <td>
                                                 <StatusBadge value={lead.status} label={lead.status_label} tone={lead.tone} />
+                                            </td>
+                                            <td className="whitespace-nowrap text-xs">
+                                                {lead.next_follow_up_at ? (
+                                                    <span className={lead.follow_up_due ? 'font-semibold text-danger' : 'text-muted-foreground'}>
+                                                        {formatDateTime(lead.next_follow_up_at)}
+                                                    </span>
+                                                ) : lead.follow_up_due ? (
+                                                    <span className="font-semibold text-danger">Belum dijadwalkan</span>
+                                                ) : (
+                                                    <span className="text-muted-foreground">—</span>
+                                                )}
                                             </td>
                                             <td className="whitespace-nowrap text-xs text-muted-foreground">{formatDateTime(lead.created_at)}</td>
                                             <td className="text-right">

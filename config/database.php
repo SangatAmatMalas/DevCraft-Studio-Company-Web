@@ -2,6 +2,16 @@
 
 use Illuminate\Support\Str;
 
+// PHP 8.5 moved the PDO MySQL SSL constants to Pdo\Mysql. Resolve the option
+// keys once so the config works on both PHP 8.4 and 8.5 without deprecations.
+$mysqlSslCaOption = defined('Pdo\\Mysql::ATTR_SSL_CA')
+    ? constant('Pdo\\Mysql::ATTR_SSL_CA')
+    : constant('PDO::MYSQL_ATTR_SSL_CA');
+
+$mysqlSslVerifyOption = defined('Pdo\\Mysql::ATTR_SSL_VERIFY_SERVER_CERT')
+    ? constant('Pdo\\Mysql::ATTR_SSL_VERIFY_SERVER_CERT')
+    : constant('PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT');
+
 return [
 
     /*
@@ -57,10 +67,14 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') && env('MYSQL_ATTR_SSL_CA') ? [
-                // Resolved at runtime: PDO::MYSQL_ATTR_SSL_CA is deprecated in PHP 8.5.
-                constant('PDO::MYSQL_ATTR_SSL_CA') => env('MYSQL_ATTR_SSL_CA'),
-            ] : [],
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                $mysqlSslCaOption => env('MYSQL_ATTR_SSL_CA'),
+                // Required when the database uses a public TLS endpoint (e.g. TiDB Cloud).
+                $mysqlSslVerifyOption => filter_var(
+                    env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT'),
+                    FILTER_VALIDATE_BOOL,
+                ),
+            ], fn ($value) => ! is_null($value) && $value !== false && $value !== '') : [],
         ],
 
         'mariadb' => [
@@ -78,10 +92,14 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
-            'options' => extension_loaded('pdo_mysql') && env('MYSQL_ATTR_SSL_CA') ? [
-                // Resolved at runtime: PDO::MYSQL_ATTR_SSL_CA is deprecated in PHP 8.5.
-                constant('PDO::MYSQL_ATTR_SSL_CA') => env('MYSQL_ATTR_SSL_CA'),
-            ] : [],
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                $mysqlSslCaOption => env('MYSQL_ATTR_SSL_CA'),
+                // Required when the database uses a public TLS endpoint (e.g. TiDB Cloud).
+                $mysqlSslVerifyOption => filter_var(
+                    env('MYSQL_ATTR_SSL_VERIFY_SERVER_CERT'),
+                    FILTER_VALIDATE_BOOL,
+                ),
+            ], fn ($value) => ! is_null($value) && $value !== false && $value !== '') : [],
         ],
 
         'pgsql' => [

@@ -1,0 +1,35 @@
+# Keep Cloud Build source uploads small. Docker still uses .dockerignore for the
+# image build itself; this file only limits what leaves the local machine.
+.gcloudignore
+.git
+.github
+.gitignore
+.gitattributes
+.editorconfig
+.env
+.env.*
+.idea
+.vscode
+phpunit.xml
+.phpunit.result.cache
+playwright.config.ts
+test-results
+playwright-report
+blob-report
+README.md
+LICENSE
+
+vendor
+node_modules
+public/build
+public/hot
+public/storage
+bootstrap/ssr
+bootstrap/cache/*.php
+storage/app/public/*
+storage/logs/*
+storage/framework/*
+storage/pail
+database/*.sqlite
+database/e2e.sqlite
+tests

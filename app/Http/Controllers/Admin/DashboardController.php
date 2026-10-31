@@ -10,6 +10,7 @@ use App\Models\Lead;
 use App\Models\Package;
 use App\Models\PortfolioProject;
 use App\Models\Service;
+use App\Support\Settings;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -42,6 +43,44 @@ class DashboardController extends Controller
             ->groupBy('event_name')
             ->pluck('total', 'event_name');
 
+        $funnelSessions = AnalyticsEvent::query()
+            ->where('created_at', '>=', $since30)
+            ->whereIn('event_name', ['page_view', 'project_brief_start', 'project_brief_submit'])
+            ->whereNotNull('anonymous_session_id')
+            ->selectRaw('event_name, count(distinct anonymous_session_id) as total')
+            ->groupBy('event_name')
+            ->pluck('total', 'event_name');
+
+        $viewSessions = (int) ($funnelSessions['page_view'] ?? 0);
+        $startSessions = (int) ($funnelSessions['project_brief_start'] ?? 0);
+        $submitSessions = (int) ($funnelSessions['project_brief_submit'] ?? 0);
+
+        $conversion = [
+            'window_days' => 30,
+            'page_view_sessions' => $viewSessions,
+            'brief_start_sessions' => $startSessions,
+            'brief_submit_sessions' => $submitSessions,
+            'view_to_start' => $viewSessions > 0 ? round($startSessions / $viewSessions * 100, 1) : null,
+            'start_to_submit' => $startSessions > 0 ? round($submitSessions / $startSessions * 100, 1) : null,
+            'view_to_submit' => $viewSessions > 0 ? round($submitSessions / $viewSessions * 100, 1) : null,
+        ];
+
+        $followUpLeads = Lead::query()
+            ->needsFollowUp()
+            ->orderBy('next_follow_up_at')
+            ->orderBy('created_at')
+            ->limit(5)
+            ->get()
+            ->map(fn (Lead $lead) => [
+                'id' => $lead->id,
+                'name' => $lead->name,
+                'context' => $lead->contextLabel(),
+                'status_label' => $lead->status->label(),
+                'next_follow_up_at' => $lead->next_follow_up_at?->toIso8601String(),
+                'created_at' => $lead->created_at?->toIso8601String(),
+            ])
+            ->all();
+
         $recentLeads = Lead::query()
             ->with(['package:id,name', 'portfolioProject:id,title'])
             ->latest()
@@ -69,6 +108,7 @@ class DashboardController extends Controller
                 'packages_published' => Package::query()->where('status', ContentStatus::Published->value)->count(),
                 'brief_submissions_30_days' => (int) ($events30['project_brief_submit'] ?? 0),
                 'contact_clicks_30_days' => (int) ($events30['whatsapp_click'] ?? 0) + (int) ($events30['email_click'] ?? 0),
+                'follow_up_due' => Lead::query()->needsFollowUp()->count(),
             ],
             'leadsByStatus' => collect(LeadStatus::cases())->map(fn (LeadStatus $status) => [
                 'status' => $status->value,
@@ -78,6 +118,11 @@ class DashboardController extends Controller
             ])->all(),
             'leadTrend' => $leadTrend,
             'recentLeads' => $recentLeads,
+            'followUpLeads' => $followUpLeads,
+            'conversion' => $conversion,
+            'notifications' => [
+                'mail_configured' => filled(Settings::get('smtp_host')) || config('mail.default') !== 'log',
+            ],
             'analytics' => [
                 'tracking_since' => AnalyticsEvent::query()->min('created_at'),
                 'events' => collect($events30)->map(fn ($total, $event) => ['event' => $event, 'total' => (int) $total])->values()->all(),

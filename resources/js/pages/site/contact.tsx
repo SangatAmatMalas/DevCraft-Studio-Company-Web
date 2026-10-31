@@ -1,6 +1,6 @@
 import { Link, useForm, usePage } from '@inertiajs/react';
-import { ArrowRight, CheckCircle2, Mail, MessageCircle, ShieldCheck, Sparkles } from 'lucide-react';
-import { FormEvent, useEffect, useRef } from 'react';
+import { ArrowRight, CheckCircle2, ChevronDown, Mail, MessageCircle, Paperclip, ShieldCheck, Sparkles, X } from 'lucide-react';
+import { ChangeEvent, FormEvent, useEffect, useRef, useState } from 'react';
 
 import Breadcrumbs from '@/components/site/breadcrumbs';
 import SeoHead from '@/components/site/seo-head';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/native-select';
 import { useAnalytics } from '@/hooks/use-analytics';
+import { cn } from '@/lib/utils';
 import type { DesignBriefContext, Seo, SharedProps } from '@/types';
 
 interface Prefill {
@@ -53,6 +54,9 @@ export default function Contact({ services, packages, projects, prefill, designB
     const { site, flash } = usePage<SharedProps>().props;
     const { track } = useAnalytics();
     const startedTracked = useRef(false);
+    const hasContext = Boolean(prefill.package || prefill.project || prefill.service || designBrief);
+    const [optionalOpen, setOptionalOpen] = useState(hasContext);
+    const [fileInputKey, setFileInputKey] = useState(0);
 
     const form = useForm({
         name: '',
@@ -66,6 +70,8 @@ export default function Contact({ services, packages, projects, prefill, designB
         target_timeline: '',
         preferred_contact: 'email',
         message: designBrief?.message_seed ?? '',
+        reference_url: '',
+        attachments: [] as File[],
         design_brief: designBrief?.token ?? '',
         privacy_consent: false as boolean,
         source_url: '',
@@ -88,6 +94,24 @@ export default function Contact({ services, packages, projects, prefill, designB
         });
     }
 
+    function handleFiles(event: ChangeEvent<HTMLInputElement>) {
+        const files = Array.from(event.target.files ?? []).slice(0, 3);
+        form.setData('attachments', files);
+    }
+
+    function removeFile(index: number) {
+        form.setData(
+            'attachments',
+            form.data.attachments.filter((_, position) => position !== index),
+        );
+        setFileInputKey((current) => current + 1);
+    }
+
+    const attachmentErrors = Object.entries(form.errors as Record<string, string | undefined>)
+        .filter(([key]) => key.startsWith('attachments.'))
+        .map(([, message]) => message)
+        .filter(Boolean) as string[];
+
     function submit(event: FormEvent) {
         event.preventDefault();
 
@@ -100,8 +124,21 @@ export default function Contact({ services, packages, projects, prefill, designB
 
         form.post('/kontak', {
             preserveScroll: true,
+            forceFormData: true,
             onSuccess: () => {
-                form.reset('name', 'email', 'phone', 'organization', 'message', 'budget_range', 'target_timeline');
+                form.reset(
+                    'name',
+                    'email',
+                    'phone',
+                    'organization',
+                    'message',
+                    'budget_range',
+                    'target_timeline',
+                    'reference_url',
+                    'attachments',
+                    'preferred_contact',
+                );
+                setFileInputKey((current) => current + 1);
             },
         });
     }
@@ -112,6 +149,22 @@ export default function Contact({ services, packages, projects, prefill, designB
         }
          
     }, [flash.lead_submitted]);
+
+    useEffect(() => {
+        const optionalKeys = [
+            'organization',
+            'service_type',
+            'package_id',
+            'portfolio_project_id',
+            'budget_range',
+            'target_timeline',
+            'reference_url',
+        ];
+
+        if (optionalKeys.some((key) => Boolean((form.errors as Record<string, string | undefined>)[key]))) {
+            setOptionalOpen(true);
+        }
+    }, [form.errors]);
 
     const contextItems = [
         prefill.package ? { label: 'Paket', value: prefill.package.name } : null,
@@ -211,9 +264,7 @@ export default function Contact({ services, packages, projects, prefill, designB
                             </div>
 
                             <div>
-                                <Label htmlFor="email">
-                                    Email <span className="text-danger">*</span>
-                                </Label>
+                                <Label htmlFor="email">Email</Label>
                                 <Input
                                     id="email"
                                     name="email"
@@ -221,11 +272,11 @@ export default function Contact({ services, packages, projects, prefill, designB
                                     value={form.data.email}
                                     onChange={(event) => form.setData('email', event.target.value)}
                                     autoComplete="email"
-                                    required
                                     aria-invalid={Boolean(form.errors.email)}
                                     className="mt-1.5"
                                 />
                                 <InputError message={form.errors.email} className="mt-1" />
+                                <p className="field-hint">Isi email atau nomor WhatsApp — minimal salah satu.</p>
                             </div>
 
                             <div>
@@ -241,39 +292,7 @@ export default function Contact({ services, packages, projects, prefill, designB
                                     className="mt-1.5"
                                 />
                                 <InputError message={form.errors.phone} className="mt-1" />
-                            </div>
-
-                            <div>
-                                <Label htmlFor="organization">Organisasi / bisnis</Label>
-                                <Input
-                                    id="organization"
-                                    name="organization"
-                                    value={form.data.organization}
-                                    onChange={(event) => form.setData('organization', event.target.value)}
-                                    autoComplete="organization"
-                                    className="mt-1.5"
-                                    aria-invalid={Boolean(form.errors.organization)}
-                                />
-                                <InputError message={form.errors.organization} className="mt-1" />
-                            </div>
-
-                            <div>
-                                <Label htmlFor="service_type">Jenis kebutuhan</Label>
-                                <NativeSelect
-                                    id="service_type"
-                                    name="service_type"
-                                    value={form.data.service_type}
-                                    onChange={(event) => form.setData('service_type', event.target.value)}
-                                    className="mt-1.5"
-                                >
-                                    <option value="">Belum tahu / lainnya</option>
-                                    {services.map((service) => (
-                                        <option key={service.slug} value={service.title}>
-                                            {service.title}
-                                        </option>
-                                    ))}
-                                </NativeSelect>
-                                <InputError message={form.errors.service_type} className="mt-1" />
+                                <p className="field-hint">Bisa diisi jika lebih nyaman dihubungi lewat WhatsApp.</p>
                             </div>
 
                             <div>
@@ -291,82 +310,160 @@ export default function Contact({ services, packages, projects, prefill, designB
                                 </NativeSelect>
                                 <InputError message={form.errors.preferred_contact} className="mt-1" />
                             </div>
+                        </div>
 
-                            <div>
-                                <Label htmlFor="package_id">Paket yang diminati</Label>
-                                <NativeSelect
-                                    id="package_id"
-                                    name="package_id"
-                                    value={form.data.package_id}
-                                    onChange={(event) => form.setData('package_id', event.target.value)}
-                                    className="mt-1.5"
-                                >
-                                    <option value="">Belum memilih paket</option>
-                                    {packages.map((item) => (
-                                        <option key={item.id} value={String(item.id)}>
-                                            {item.name}
-                                        </option>
-                                    ))}
-                                </NativeSelect>
-                                <InputError message={form.errors.package_id} className="mt-1" />
-                            </div>
+                        <div className="mt-5 rounded-xl border border-border">
+                            <button
+                                type="button"
+                                onClick={() => setOptionalOpen((current) => !current)}
+                                aria-expanded={optionalOpen}
+                                aria-controls="optional-details"
+                                className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left"
+                            >
+                                <span>
+                                    <span className="block text-sm font-semibold text-navy">Detail opsional</span>
+                                    <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                                        Organisasi, paket, budget, target waktu, dan tautan referensi. Membantu kami menyiapkan estimasi
+                                        yang lebih relevan.
+                                    </span>
+                                </span>
+                                <ChevronDown
+                                    className={cn(
+                                        'mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform',
+                                        optionalOpen && 'rotate-180',
+                                    )}
+                                    aria-hidden="true"
+                                />
+                            </button>
 
-                            <div>
-                                <Label htmlFor="portfolio_project_id">Referensi proyek</Label>
-                                <NativeSelect
-                                    id="portfolio_project_id"
-                                    name="portfolio_project_id"
-                                    value={form.data.portfolio_project_id}
-                                    onChange={(event) => form.setData('portfolio_project_id', event.target.value)}
-                                    className="mt-1.5"
-                                >
-                                    <option value="">Tidak ada</option>
-                                    {projects.map((item) => (
-                                        <option key={item.id} value={String(item.id)}>
-                                            {item.title}
-                                        </option>
-                                    ))}
-                                </NativeSelect>
-                                <InputError message={form.errors.portfolio_project_id} className="mt-1" />
-                            </div>
+                            {optionalOpen ? (
+                                <div id="optional-details" className="grid gap-5 border-t border-border px-4 py-5 sm:grid-cols-2">
+                                    <div>
+                                        <Label htmlFor="organization">Organisasi / bisnis</Label>
+                                        <Input
+                                            id="organization"
+                                            name="organization"
+                                            value={form.data.organization}
+                                            onChange={(event) => form.setData('organization', event.target.value)}
+                                            autoComplete="organization"
+                                            className="mt-1.5"
+                                            aria-invalid={Boolean(form.errors.organization)}
+                                        />
+                                        <InputError message={form.errors.organization} className="mt-1" />
+                                    </div>
 
-                            <div>
-                                <Label htmlFor="budget_range">Estimasi budget</Label>
-                                <NativeSelect
-                                    id="budget_range"
-                                    name="budget_range"
-                                    value={form.data.budget_range}
-                                    onChange={(event) => form.setData('budget_range', event.target.value)}
-                                    className="mt-1.5"
-                                >
-                                    <option value="">Belum ditentukan</option>
-                                    {BUDGET_OPTIONS.map((option) => (
-                                        <option key={option} value={option}>
-                                            {option}
-                                        </option>
-                                    ))}
-                                </NativeSelect>
-                                <InputError message={form.errors.budget_range} className="mt-1" />
-                            </div>
+                                    <div>
+                                        <Label htmlFor="service_type">Jenis kebutuhan</Label>
+                                        <NativeSelect
+                                            id="service_type"
+                                            name="service_type"
+                                            value={form.data.service_type}
+                                            onChange={(event) => form.setData('service_type', event.target.value)}
+                                            className="mt-1.5"
+                                        >
+                                            <option value="">Belum tahu / lainnya</option>
+                                            {services.map((service) => (
+                                                <option key={service.slug} value={service.title}>
+                                                    {service.title}
+                                                </option>
+                                            ))}
+                                        </NativeSelect>
+                                        <InputError message={form.errors.service_type} className="mt-1" />
+                                    </div>
 
-                            <div>
-                                <Label htmlFor="target_timeline">Target waktu</Label>
-                                <NativeSelect
-                                    id="target_timeline"
-                                    name="target_timeline"
-                                    value={form.data.target_timeline}
-                                    onChange={(event) => form.setData('target_timeline', event.target.value)}
-                                    className="mt-1.5"
-                                >
-                                    <option value="">Belum ditentukan</option>
-                                    {TIMELINE_OPTIONS.map((option) => (
-                                        <option key={option} value={option}>
-                                            {option}
-                                        </option>
-                                    ))}
-                                </NativeSelect>
-                                <InputError message={form.errors.target_timeline} className="mt-1" />
-                            </div>
+                                    <div>
+                                        <Label htmlFor="package_id">Paket yang diminati</Label>
+                                        <NativeSelect
+                                            id="package_id"
+                                            name="package_id"
+                                            value={form.data.package_id}
+                                            onChange={(event) => form.setData('package_id', event.target.value)}
+                                            className="mt-1.5"
+                                        >
+                                            <option value="">Belum memilih paket</option>
+                                            {packages.map((item) => (
+                                                <option key={item.id} value={String(item.id)}>
+                                                    {item.name}
+                                                </option>
+                                            ))}
+                                        </NativeSelect>
+                                        <InputError message={form.errors.package_id} className="mt-1" />
+                                    </div>
+
+                                    <div>
+                                        <Label htmlFor="portfolio_project_id">Referensi proyek</Label>
+                                        <NativeSelect
+                                            id="portfolio_project_id"
+                                            name="portfolio_project_id"
+                                            value={form.data.portfolio_project_id}
+                                            onChange={(event) => form.setData('portfolio_project_id', event.target.value)}
+                                            className="mt-1.5"
+                                        >
+                                            <option value="">Tidak ada</option>
+                                            {projects.map((item) => (
+                                                <option key={item.id} value={String(item.id)}>
+                                                    {item.title}
+                                                </option>
+                                            ))}
+                                        </NativeSelect>
+                                        <InputError message={form.errors.portfolio_project_id} className="mt-1" />
+                                    </div>
+
+                                    <div>
+                                        <Label htmlFor="budget_range">Estimasi budget</Label>
+                                        <NativeSelect
+                                            id="budget_range"
+                                            name="budget_range"
+                                            value={form.data.budget_range}
+                                            onChange={(event) => form.setData('budget_range', event.target.value)}
+                                            className="mt-1.5"
+                                        >
+                                            <option value="">Belum ditentukan</option>
+                                            {BUDGET_OPTIONS.map((option) => (
+                                                <option key={option} value={option}>
+                                                    {option}
+                                                </option>
+                                            ))}
+                                        </NativeSelect>
+                                        <InputError message={form.errors.budget_range} className="mt-1" />
+                                    </div>
+
+                                    <div>
+                                        <Label htmlFor="target_timeline">Target waktu</Label>
+                                        <NativeSelect
+                                            id="target_timeline"
+                                            name="target_timeline"
+                                            value={form.data.target_timeline}
+                                            onChange={(event) => form.setData('target_timeline', event.target.value)}
+                                            className="mt-1.5"
+                                        >
+                                            <option value="">Belum ditentukan</option>
+                                            {TIMELINE_OPTIONS.map((option) => (
+                                                <option key={option} value={option}>
+                                                    {option}
+                                                </option>
+                                            ))}
+                                        </NativeSelect>
+                                        <InputError message={form.errors.target_timeline} className="mt-1" />
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <Label htmlFor="reference_url">Tautan referensi</Label>
+                                        <Input
+                                            id="reference_url"
+                                            name="reference_url"
+                                            type="url"
+                                            value={form.data.reference_url}
+                                            onChange={(event) => form.setData('reference_url', event.target.value)}
+                                            placeholder="https://contoh-website.com"
+                                            aria-invalid={Boolean(form.errors.reference_url)}
+                                            className="mt-1.5"
+                                        />
+                                        <InputError message={form.errors.reference_url} className="mt-1" />
+                                        <p className="field-hint">Website atau contoh tampilan yang Anda suka.</p>
+                                    </div>
+                                </div>
+                            ) : null}
                         </div>
 
                         <div className="mt-5">
@@ -386,6 +483,57 @@ export default function Contact({ services, packages, projects, prefill, designB
                             />
                             <InputError message={form.errors.message} className="mt-1" />
                             <p className="field-hint">Minimal 20 karakter. Hindari menuliskan data sensitif seperti kata sandi.</p>
+                        </div>
+
+                        <div className="mt-5">
+                            <Label htmlFor="attachments">Lampiran (opsional)</Label>
+                            <label
+                                htmlFor="attachments"
+                                className="mt-1.5 flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border bg-ice/60 px-4 py-3 text-sm text-ink/75 transition-colors hover:border-brand-300 hover:bg-brand-50/40"
+                            >
+                                <Paperclip className="h-4 w-4 shrink-0 text-brand-600" aria-hidden="true" />
+                                <span className="font-medium text-navy">Pilih file</span>
+                                <span className="ml-auto text-xs text-muted-foreground">Maks. 3 file · 5 MB</span>
+                                <input
+                                    key={fileInputKey}
+                                    id="attachments"
+                                    name="attachments[]"
+                                    type="file"
+                                    multiple
+                                    accept=".pdf,.jpg,.jpeg,.png,.docx"
+                                    onChange={handleFiles}
+                                    className="sr-only"
+                                />
+                            </label>
+
+                            {form.data.attachments.length > 0 ? (
+                                <ul className="mt-2 space-y-1.5">
+                                    {form.data.attachments.map((file, index) => (
+                                        <li
+                                            key={`${file.name}-${index}`}
+                                            className="flex items-center justify-between gap-3 rounded-lg border border-border bg-white px-3 py-2 text-xs"
+                                        >
+                                            <span className="min-w-0 truncate text-ink/80">{file.name}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => removeFile(index)}
+                                                className="shrink-0 rounded p-0.5 text-muted-foreground transition-colors hover:text-danger"
+                                                aria-label={`Hapus ${file.name}`}
+                                            >
+                                                <X className="h-3.5 w-3.5" aria-hidden="true" />
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : null}
+
+                            <InputError message={form.errors.attachments} className="mt-1" />
+                            {attachmentErrors.map((message, index) => (
+                                <p key={`${message}-${index}`} className="mt-1 text-sm text-danger">
+                                    {message}
+                                </p>
+                            ))}
+                            <p className="field-hint">Brief, mockup, atau dokumen pendukung. PDF, JPG, PNG, atau DOCX.</p>
                         </div>
 
                         <div className="sr-only" aria-hidden="true">

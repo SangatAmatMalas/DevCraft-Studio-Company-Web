@@ -20,6 +20,8 @@
         <tr><td><strong>Target waktu</strong></td><td>{{ $lead->target_timeline ?: '-' }}</td></tr>
         <tr><td><strong>Cara dihubungi</strong></td><td>{{ $lead->preferred_contact ?: '-' }}</td></tr>
         <tr><td><strong>Halaman asal</strong></td><td>{{ $lead->source_url ?: '-' }}</td></tr>
+        <tr><td><strong>Tautan referensi</strong></td><td>{{ $lead->reference_url ?: '-' }}</td></tr>
+        <tr><td><strong>Lampiran</strong></td><td>{{ $lead->attachments->count() }} file</td></tr>
     </table>
 
     <h2 style="font-size: 16px; margin-top: 24px;">Kebutuhan</h2>

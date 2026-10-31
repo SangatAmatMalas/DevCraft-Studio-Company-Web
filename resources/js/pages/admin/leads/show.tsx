@@ -7,6 +7,7 @@ import Panel from '@/components/admin/panel';
 import StatusBadge from '@/components/admin/status-badge';
 import { Button } from '@/components/ui/button';
 import InputError from '@/components/input-error';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/native-select';
@@ -24,13 +25,18 @@ interface LeadDetail {
     preferred_contact: string | null;
     message: string;
     source_url: string | null;
+    reference_url: string | null;
     source_type: string | null;
     status: string;
     status_label: string;
+    next_follow_up_at: string | null;
+    last_contacted_at: string | null;
+    follow_up_due: boolean;
     privacy_consent_at: string | null;
     created_at: string | null;
     package: { name: string; slug: string } | null;
     project: { title: string; slug: string } | null;
+    attachments: { id: number; name: string; size: string; mime_type: string | null; download_url: string }[];
     design_brief: {
         token: string;
         brand_name: string;
@@ -49,7 +55,10 @@ const PREFERRED_LABELS: Record<string, string> = {
 };
 
 export default function LeadShow({ lead, statuses }: { lead: LeadDetail; statuses: Record<string, string> }) {
-    const statusForm = useForm({ status: lead.status });
+    const statusForm = useForm({
+        status: lead.status,
+        next_follow_up_at: lead.next_follow_up_at ? lead.next_follow_up_at.slice(0, 10) : '',
+    });
     const noteForm = useForm({ note: '' });
 
     const updateStatus = (event: FormEvent) => {
@@ -77,6 +86,7 @@ export default function LeadShow({ lead, statuses }: { lead: LeadDetail; statuse
         lead.project ? { label: 'Referensi proyek', value: lead.project.title } : null,
         lead.budget_range ? { label: 'Estimasi budget', value: lead.budget_range } : null,
         lead.target_timeline ? { label: 'Target waktu', value: lead.target_timeline } : null,
+        lead.reference_url ? { label: 'Tautan referensi', value: lead.reference_url } : null,
         lead.preferred_contact ? { label: 'Cara dihubungi', value: PREFERRED_LABELS[lead.preferred_contact] ?? lead.preferred_contact } : null,
     ].filter(Boolean) as { label: string; value: string }[];
 
@@ -168,7 +178,20 @@ export default function LeadShow({ lead, statuses }: { lead: LeadDetail; statuse
                                 {context.map((item) => (
                                     <div key={item.label}>
                                         <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{item.label}</dt>
-                                        <dd className="mt-0.5 text-sm text-ink">{item.value}</dd>
+                                        <dd className="mt-0.5 text-sm text-ink">
+                                            {item.label === 'Tautan referensi' ? (
+                                                <a
+                                                    href={item.value}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="break-all text-brand-700 hover:underline"
+                                                >
+                                                    {item.value}
+                                                </a>
+                                            ) : (
+                                                item.value
+                                            )}
+                                        </dd>
                                     </div>
                                 ))}
                             </dl>
@@ -199,6 +222,30 @@ export default function LeadShow({ lead, statuses }: { lead: LeadDetail; statuse
                             {lead.source_type ? <span>Kanal: {lead.source_type}</span> : null}
                         </div>
                     </Panel>
+
+                    {lead.attachments.length > 0 ? (
+                        <Panel title="Lampiran" description="File yang dikirim bersama brief." bodyClassName="p-5">
+                            <ul className="space-y-2">
+                                {lead.attachments.map((attachment) => (
+                                    <li
+                                        key={attachment.id}
+                                        className="flex items-center justify-between gap-3 rounded-xl border border-border bg-ice/60 px-3 py-2.5"
+                                    >
+                                        <div className="min-w-0">
+                                            <p className="truncate text-sm font-medium text-navy">{attachment.name}</p>
+                                            <p className="text-xs text-muted-foreground">{attachment.size}</p>
+                                        </div>
+                                        <a
+                                            href={attachment.download_url}
+                                            className="shrink-0 text-xs font-semibold text-brand-700 hover:underline"
+                                        >
+                                            Unduh
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        </Panel>
+                    ) : null}
 
                     <Panel title="Catatan internal" description="Hanya terlihat oleh tim." bodyClassName="p-5">
                         <form onSubmit={addNote} className="space-y-2">
@@ -262,10 +309,37 @@ export default function LeadShow({ lead, statuses }: { lead: LeadDetail; statuse
                                 </NativeSelect>
                                 <InputError message={statusForm.errors.status} className="mt-1" />
                             </div>
+
+                            <div>
+                                <Label htmlFor="next_follow_up_at">Follow-up berikutnya</Label>
+                                <Input
+                                    id="next_follow_up_at"
+                                    type="date"
+                                    value={statusForm.data.next_follow_up_at}
+                                    onChange={(event) => statusForm.setData('next_follow_up_at', event.target.value)}
+                                    className="mt-1.5"
+                                />
+                                <InputError message={statusForm.errors.next_follow_up_at} className="mt-1" />
+                                <p className="field-hint">
+                                    Kosongkan jika belum ada jadwal. Lead tanpa jadwal ditandai setelah 3 hari.
+                                </p>
+                            </div>
+
                             <Button type="submit" disabled={statusForm.processing} className="w-full rounded-lg">
                                 {statusForm.processing ? 'Menyimpan…' : 'Simpan status'}
                             </Button>
                         </form>
+
+                        <div className="mt-4 space-y-1 border-t border-border pt-3 text-xs text-muted-foreground">
+                            {lead.follow_up_due ? (
+                                <p className="font-medium text-danger">Perlu ditindaklanjuti sekarang.</p>
+                            ) : null}
+                            {lead.last_contacted_at ? (
+                                <p>Terakhir dihubungi: {formatDateTime(lead.last_contacted_at)}</p>
+                            ) : (
+                                <p>Belum pernah ditandai dihubungi.</p>
+                            )}
+                        </div>
                     </Panel>
 
                     <Panel title="Kontak cepat" bodyClassName="p-5">

@@ -15,6 +15,8 @@ use App\Services\Seo;
 use App\Services\WhatsAppLink;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -91,10 +93,19 @@ class ContactController extends Controller
         $project = $request->project();
         $brief = $this->designBrief($request);
 
+        $email = $request->input('email');
+        $phone = $request->input('phone');
+        $preferredContact = $request->input('preferred_contact');
+
+        // Keep the preferred channel consistent with the details the lead shared.
+        if (blank($preferredContact) || ($preferredContact === 'email' && blank($email))) {
+            $preferredContact = filled($email) ? 'email' : (filled($phone) ? 'whatsapp' : null);
+        }
+
         $lead = Lead::query()->create([
             'name' => $request->string('name')->toString(),
-            'email' => $request->string('email')->toString(),
-            'phone' => $request->input('phone'),
+            'email' => $email,
+            'phone' => $phone,
             'organization' => $request->input('organization'),
             'service_type' => $request->input('service_type'),
             'package_id' => $package?->id,
@@ -102,14 +113,18 @@ class ContactController extends Controller
             'design_brief_id' => $brief?->id,
             'budget_range' => $request->input('budget_range'),
             'target_timeline' => $request->input('target_timeline'),
-            'preferred_contact' => $request->input('preferred_contact', 'email'),
+            'preferred_contact' => $preferredContact,
             'message' => $request->string('message')->toString(),
             'source_url' => $request->input('source_url') ?: url()->previous(),
+            'reference_url' => $request->input('reference_url'),
             'source_type' => $brief ? 'design_preview' : ($request->input('source_type') ?: 'contact_page'),
             'status' => 'new',
             'privacy_consent_at' => now(),
             'ip_hash' => hash('sha256', ($request->ip() ?? 'unknown').config('app.key')),
         ]);
+
+        $attachments = $request->file('attachments', []);
+        $this->storeAttachments($lead, is_array($attachments) ? $attachments : [$attachments]);
 
         if ($brief) {
             $brief->forceFill([
@@ -134,11 +149,32 @@ class ContactController extends Controller
         );
 
         LeadNotifier::notify($lead);
+        LeadNotifier::sendConfirmation($lead);
 
         return redirect()
             ->route('kontak')
             ->with('success', 'Terima kasih. Brief Anda sudah kami terima dan akan ditinjau oleh tim DevCraft Studio.')
             ->with('lead_submitted', true);
+    }
+
+    /** @param array<int, UploadedFile> $files */
+    private function storeAttachments(Lead $lead, array $files): void
+    {
+        foreach ($files as $file) {
+            if (! $file instanceof UploadedFile) {
+                continue;
+            }
+
+            $path = $file->store('lead-attachments/'.$lead->id, 'local');
+
+            $lead->attachments()->create([
+                'disk' => 'local',
+                'path' => $path,
+                'original_name' => Str::limit(basename($file->getClientOriginalName()), 180, ''),
+                'mime_type' => $file->getClientMimeType(),
+                'size' => $file->getSize() ?: 0,
+            ]);
+        }
     }
 
     private function designBrief(Request $request): ?DesignBrief

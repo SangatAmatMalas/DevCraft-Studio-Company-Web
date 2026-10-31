@@ -18,6 +18,14 @@ class LeadUpdateRequest extends FormRequest
     {
         return [
             'status' => ['required', Rule::enum(LeadStatus::class)],
+            'next_follow_up_at' => ['nullable', 'date'],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('next_follow_up_at')) && trim($this->input('next_follow_up_at')) === '') {
+            $this->merge(['next_follow_up_at' => null]);
+        }
     }
 }

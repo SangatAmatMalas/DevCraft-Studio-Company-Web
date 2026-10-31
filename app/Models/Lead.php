@@ -27,8 +27,11 @@ class Lead extends Model
         'preferred_contact',
         'message',
         'source_url',
+        'reference_url',
         'source_type',
         'status',
+        'next_follow_up_at',
+        'last_contacted_at',
         'privacy_consent_at',
         'ip_hash',
     ];
@@ -37,6 +40,8 @@ class Lead extends Model
     {
         return [
             'status' => LeadStatus::class,
+            'next_follow_up_at' => 'datetime',
+            'last_contacted_at' => 'datetime',
             'privacy_consent_at' => 'datetime',
         ];
     }
@@ -65,10 +70,50 @@ class Lead extends Model
         return $this->hasMany(LeadNote::class)->latest();
     }
 
+    /** @return HasMany<LeadAttachment, $this> */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(LeadAttachment::class)->latest();
+    }
+
     /** @param Builder<Lead> $query */
     public function scopeStatus(Builder $query, string $status): void
     {
         $query->where('status', $status);
+    }
+
+    /**
+     * Leads that still need attention: an explicit follow-up date has passed,
+     * or no date was set and the lead has been waiting for more than three days.
+     *
+     * @param  Builder<Lead>  $query
+     */
+    public function scopeNeedsFollowUp(Builder $query): void
+    {
+        $query->whereNotIn('status', [
+            LeadStatus::Won->value,
+            LeadStatus::Lost->value,
+            LeadStatus::Archived->value,
+        ])->where(function (Builder $builder) {
+            $builder->where('next_follow_up_at', '<=', now()->endOfDay())
+                ->orWhere(function (Builder $nested) {
+                    $nested->whereNull('next_follow_up_at')
+                        ->where('created_at', '<=', now()->subDays(3));
+                });
+        });
+    }
+
+    public function followUpDue(): bool
+    {
+        if (in_array($this->status, [LeadStatus::Won, LeadStatus::Lost, LeadStatus::Archived], true)) {
+            return false;
+        }
+
+        if ($this->next_follow_up_at !== null) {
+            return $this->next_follow_up_at->lte(now()->endOfDay());
+        }
+
+        return $this->created_at !== null && $this->created_at->lte(now()->subDays(3));
     }
 
     public function statusLabel(): string

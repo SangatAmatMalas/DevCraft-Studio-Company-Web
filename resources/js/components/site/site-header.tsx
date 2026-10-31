@@ -9,13 +9,16 @@ import { cn } from '@/lib/utils';
 import type { SharedProps } from '@/types';
 
 const NAV = [
-    { label: 'Beranda', href: '/' },
     { label: 'Layanan', href: '/layanan' },
     { label: 'Paket', href: '/paket' },
-    { label: 'Coba Desain', href: '/desain' },
+    { label: 'Preview Desain', href: '/desain' },
     { label: 'Portfolio', href: '/portfolio' },
-    { label: 'Tentang Kami', href: '/tentang-kami' },
     { label: 'Kontak', href: '/kontak' },
+];
+
+const SECONDARY_NAV = [
+    { label: 'Tentang Kami', href: '/tentang-kami' },
+    { label: 'Kebijakan Privasi', href: '/kebijakan-privasi' },
 ];
 
 export default function SiteHeader() {
@@ -30,14 +33,14 @@ export default function SiteHeader() {
             <div className="container-page flex h-16 items-center justify-between gap-4">
                 <Logo name={site.brand.name ?? 'DevCraft Studio'} />
 
-                <nav aria-label="Navigasi utama" className="hidden items-center gap-0.5 lg:flex">
+                <nav aria-label="Navigasi utama" className="hidden items-center gap-0.5 md:flex">
                     {NAV.map((item) => (
                         <Link
                             key={item.href}
                             href={item.href}
                             aria-current={isActive(item.href) ? 'page' : undefined}
                             className={cn(
-                                'rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-brand-50 hover:text-brand-700',
+                                'rounded-lg px-2.5 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-brand-50 hover:text-brand-700 xl:px-3',
                                 isActive(item.href) && 'bg-brand-50 text-brand-700',
                             )}
                         >
@@ -46,13 +49,13 @@ export default function SiteHeader() {
                     ))}
                 </nav>
 
-                <div className="hidden items-center gap-2 lg:flex">
+                <div className="hidden items-center gap-2 md:flex">
                     {whatsapp.configured && whatsapp.url ? (
                         <a
                             href={whatsapp.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:text-brand-700"
+                            className="hidden items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:text-brand-700 xl:inline-flex"
                         >
                             <MessageCircle className="h-4 w-4" aria-hidden="true" />
                             WhatsApp
@@ -70,7 +73,7 @@ export default function SiteHeader() {
                     <DialogTrigger asChild>
                         <button
                             type="button"
-                            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border text-navy transition-colors hover:bg-ice lg:hidden"
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border text-navy transition-colors hover:bg-ice md:hidden"
                             aria-label="Buka menu navigasi"
                         >
                             <Menu className="h-5 w-5" aria-hidden="true" />
@@ -114,6 +117,18 @@ export default function SiteHeader() {
                                     Chat WhatsApp
                                 </a>
                             ) : null}
+                            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pt-2 text-xs text-muted-foreground">
+                                {SECONDARY_NAV.map((item) => (
+                                    <Link
+                                        key={item.href}
+                                        href={item.href}
+                                        onClick={() => setOpen(false)}
+                                        className="transition-colors hover:text-brand-700"
+                                    >
+                                        {item.label}
+                                    </Link>
+                                ))}
+                            </div>
                         </div>
                     </DialogContent>
                 </Dialog>
