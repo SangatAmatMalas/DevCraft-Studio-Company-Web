@@ -3,6 +3,7 @@ import {
     ArrowRight,
     ClipboardList,
     Code2,
+    Download,
     Gauge,
     MessageSquare,
     Search,
@@ -22,6 +23,7 @@ import SeoHead from '@/components/site/seo-head';
 import ServiceCard from '@/components/site/service-card';
 import SiteLayout from '@/components/site/site-layout';
 import { Button } from '@/components/ui/button';
+import { useAnalytics } from '@/hooks/use-analytics';
 import type { FaqItem, PackageCard as PackageCardType, ProjectCard as ProjectCardType, Seo, ServiceCard as ServiceCardType, SharedProps, TestimonialItem } from '@/types';
 import { usePage } from '@inertiajs/react';
 
@@ -69,7 +71,8 @@ const STEPS = [
 ];
 
 export default function Home({ services, projects, packages, faqs, testimonials, technologies, hero, seo }: HomeProps) {
-    const { whatsapp } = usePage<SharedProps>().props;
+    const { whatsapp, site } = usePage<SharedProps>().props;
+    const { track } = useAnalytics();
 
     return (
         <SiteLayout>
@@ -260,6 +263,82 @@ export default function Home({ services, projects, packages, faqs, testimonials,
                         </div>
                     ))}
                 </div>
+            </Section>
+
+            <Section tone="ice">
+                <SectionHeading
+                    eyebrow="Cara kami bekerja"
+                    title="Hal yang bisa Anda pegang sebelum memulai"
+                    description="Tanpa janji berlebihan. Ini bagian yang memang kami tulis, uji, dan serahkan."
+                />
+                <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="rounded-2xl border border-border bg-white p-6 shadow-soft">
+                        <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600 ring-1 ring-brand-100">
+                            <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+                        </span>
+                        <h3 className="mt-4 font-display text-base font-bold text-navy">Ruang lingkup tertulis</h3>
+                        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                            Deliverables, batasan, dan revisi ditulis di penawaran sebelum pekerjaan dimulai.
+                        </p>
+                    </div>
+                    <div className="rounded-2xl border border-border bg-white p-6 shadow-soft">
+                        <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600 ring-1 ring-brand-100">
+                            <MessageSquare className="h-5 w-5" aria-hidden="true" />
+                        </span>
+                        <h3 className="mt-4 font-display text-base font-bold text-navy">Progres terlihat</h3>
+                        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                            Update berkala, tidak perlu menebak status. Hambatan disampaikan saat terjadi.
+                        </p>
+                    </div>
+                    <div className="rounded-2xl border border-border bg-white p-6 shadow-soft">
+                        <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600 ring-1 ring-brand-100">
+                            <ClipboardList className="h-5 w-5" aria-hidden="true" />
+                        </span>
+                        <h3 className="mt-4 font-display text-base font-bold text-navy">Uji sebelum rilis</h3>
+                        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                            Alur kritis diuji fungsional & lintas perangkat sebelum deploy ke produksi.
+                        </p>
+                    </div>
+                    <div className="rounded-2xl border border-border bg-white p-6 shadow-soft">
+                        <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-50 text-brand-600 ring-1 ring-brand-100">
+                            <Download className="h-5 w-5" aria-hidden="true" />
+                        </span>
+                        <h3 className="mt-4 font-display text-base font-bold text-navy">Dokumen & akses serah terima</h3>
+                        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                            Kode, akses, dan dokumentasi diserahkan penuh. Tim Anda bisa melanjutkan sendiri.
+                        </p>
+                    </div>
+                </div>
+
+                {site.conversion.lead_magnet_url ? (
+                    <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-border bg-white p-6 shadow-soft sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-start gap-4">
+                            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600 ring-1 ring-brand-100">
+                                <Download className="h-5 w-5" aria-hidden="true" />
+                            </span>
+                            <div>
+                                <p className="font-display text-base font-bold text-navy">
+                                    {site.conversion.lead_magnet_title || 'Checklist menyiapkan brief website'}
+                                </p>
+                                <p className="mt-1 max-w-xl text-sm leading-relaxed text-muted-foreground">
+                                    {site.conversion.lead_magnet_description ||
+                                        'Gunakan panduan ini untuk merapikan tujuan, konten, dan kebutuhan teknis sebelum memulai diskusi.'}
+                                </p>
+                                <p className="mt-1 text-xs text-muted-foreground">Akses langsung, tanpa perlu mengisi email.</p>
+                            </div>
+                        </div>
+                        <a
+                            href={site.conversion.lead_magnet_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => track('lead_magnet_click', { metadata: { source: 'home_trust' } })}
+                            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-border px-5 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-ice"
+                        >
+                            Buka resource
+                            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                        </a>
+                    </div>
+                ) : null}
             </Section>
 
             <Section tone="navy">

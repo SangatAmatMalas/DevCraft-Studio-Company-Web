@@ -205,6 +205,18 @@ INERTIA_SSR_URL=http://127.0.0.1:13714
 
 SMTP juga dapat diatur dari **Admin → Pengaturan** (tersimpan terenkripsi di tabel `settings`).
 
+### 7.2a Pengaturan konversi
+
+Tiga pengaturan opsional di **Admin → Pengaturan** mengaktifkan jalur konversi tambahan. Semuanya kosong secara default dan tidak menampilkan apa pun jika belum diisi.
+
+| Pengaturan | Perilaku |
+| --- | --- |
+| `booking_url` + `booking_label` | Tautan booking eksternal (Cal.com, Calendly, dsb.). Muncul di sidebar halaman layanan/paket/portfolio, halaman hasil preview desain, footer, dan CTA band. Tidak ada kalender internal. |
+| `lead_magnet_url` + judul/deskripsi | Resource publik (mis. checklist brief) yang bisa dibuka langsung tanpa mengisi email. Ditampilkan di bagian trust beranda. |
+| `whatsapp_template` | Mendukung placeholder `{name}`, `{need}`, dan `{url}`. Halaman layanan, paket, portfolio, dan hasil desain mengirim `{need}` yang sudah berisi konteks halaman. |
+
+Deep link WhatsApp di halaman detail dibangun di server (`WhatsAppLink::forContext`), sehingga pesan tidak pernah memuat data yang diketik pengunjung.
+
 ### 7.3 Nginx + PHP-FPM
 
 ```nginx

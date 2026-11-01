@@ -70,6 +70,11 @@ export default function SiteFooter() {
                             </Link>
                         </li>
                         <li>
+                            <Link href="/desain" className="transition-colors hover:text-white">
+                                Preview desain
+                            </Link>
+                        </li>
+                        <li>
                             <Link href="/tentang-kami" className="transition-colors hover:text-white">
                                 Tentang kami
                             </Link>
@@ -108,6 +113,18 @@ export default function SiteFooter() {
                             </li>
                         ) : null}
                         {site.contact.hours ? <li className="text-slate-400">{site.contact.hours}</li> : null}
+                        {site.conversion.booking_url ? (
+                            <li>
+                                <a
+                                    href={site.conversion.booking_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="transition-colors hover:text-white"
+                                >
+                                    {site.conversion.booking_label || 'Jadwalkan konsultasi'}
+                                </a>
+                            </li>
+                        ) : null}
                         {!site.contact.email && !site.contact.address ? (
                             <li className="text-slate-400">
                                 Informasi kontak akan tersedia di halaman kontak setelah dikonfigurasi melalui admin.

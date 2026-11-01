@@ -15,10 +15,12 @@ class SettingController extends Controller
     protected const TEXT_KEYS = [
         'brand_name', 'brand_tagline', 'brand_positioning',
         'contact_email', 'contact_whatsapp', 'contact_address', 'contact_hours',
+        'booking_url', 'booking_label',
         'social_github', 'social_linkedin', 'social_instagram', 'social_x',
         'seo_default_title', 'seo_default_description',
         'analytics_provider', 'analytics_measurement_id', 'search_console_verification',
         'whatsapp_template', 'home_hero_badge', 'home_hero_title', 'home_hero_subtitle',
+        'lead_magnet_url', 'lead_magnet_title', 'lead_magnet_description',
         'lead_notification_email', 'mail_from_name', 'mail_from_address',
         'smtp_host', 'smtp_port', 'smtp_username', 'smtp_encryption',
     ];
@@ -65,7 +67,7 @@ class SettingController extends Controller
     {
         return match (true) {
             str_starts_with($key, 'brand_') => 'brand',
-            str_starts_with($key, 'contact_'), str_starts_with($key, 'social_') => 'contact',
+            str_starts_with($key, 'contact_'), str_starts_with($key, 'social_'), str_starts_with($key, 'booking_') => 'contact',
             str_starts_with($key, 'seo_'), str_starts_with($key, 'analytics_'), str_starts_with($key, 'search_console') => 'seo',
             str_starts_with($key, 'home_') => 'home',
             str_starts_with($key, 'smtp_'), str_starts_with($key, 'mail_'), str_starts_with($key, 'lead_notification') => 'mail',

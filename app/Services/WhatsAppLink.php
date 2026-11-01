@@ -54,6 +54,15 @@ class WhatsAppLink
         return 'https://wa.me/'.$number.'?text='.rawurlencode($message);
     }
 
+    /**
+     * Build a public WhatsApp URL with page-specific context. Context is
+     * authored by the application, never copied from visitor-entered fields.
+     */
+    public static function forContext(string $need, ?string $url = null): ?string
+    {
+        return self::url(null, $need, $url);
+    }
+
     public static function isConfigured(): bool
     {
         return filled(self::normalizeNumber(Settings::get('contact_whatsapp')));

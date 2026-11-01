@@ -8,6 +8,7 @@ use App\Models\DesignBrief;
 use App\Services\AnalyticsRecorder;
 use App\Services\DesignBriefFactory;
 use App\Services\Seo;
+use App\Services\WhatsAppLink;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -171,6 +172,10 @@ class DesignPreviewController extends Controller
             'expires_at' => $brief->expires_at?->toIso8601String(),
             'lead_url' => route('kontak', ['desain' => $brief->token]),
             'packages_url' => route('paket.index', ['desain' => $brief->token]),
+            'whatsapp_url' => WhatsAppLink::forContext(
+                'preview desain '.$brief->brand_name.($brief->chosen_template ? ' ('.$brief->templateLabel().')' : ''),
+                $brief->resultUrl(),
+            ),
         ];
     }
 

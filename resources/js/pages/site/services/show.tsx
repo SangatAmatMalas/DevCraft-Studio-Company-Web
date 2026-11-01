@@ -18,11 +18,12 @@ interface ServiceShowProps {
     service: ServiceDetail;
     relatedServices: ServiceCardType[];
     packages: PackageCardType[];
+    whatsappUrl: string | null;
     seo: Seo;
 }
 
-export default function ServiceShow({ service, relatedServices, packages, seo }: ServiceShowProps) {
-    const { whatsapp } = usePage<SharedProps>().props;
+export default function ServiceShow({ service, relatedServices, packages, whatsappUrl, seo }: ServiceShowProps) {
+    const { site, whatsapp } = usePage<SharedProps>().props;
     const { track } = useAnalytics();
 
     useEffect(() => {
@@ -143,9 +144,9 @@ export default function ServiceShow({ service, relatedServices, packages, seo }:
                                         <ArrowRight className="h-4 w-4" aria-hidden="true" />
                                     </Link>
                                 </Button>
-                                {whatsapp.configured && whatsapp.url ? (
+                                {whatsapp.configured && whatsappUrl ? (
                                     <a
-                                        href={whatsapp.url}
+                                        href={whatsappUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         onClick={() => track('whatsapp_click', { metadata: { source: 'service_page', service_slug: service.slug } })}
@@ -153,6 +154,17 @@ export default function ServiceShow({ service, relatedServices, packages, seo }:
                                     >
                                         <MessageCircle className="h-4 w-4" aria-hidden="true" />
                                         Chat WhatsApp
+                                    </a>
+                                ) : null}
+                                {site.conversion.booking_url ? (
+                                    <a
+                                        href={site.conversion.booking_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={() => track('booking_click', { metadata: { source: 'service_page', service_slug: service.slug } })}
+                                        className="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50"
+                                    >
+                                        {site.conversion.booking_label || 'Jadwalkan konsultasi'}
                                     </a>
                                 ) : null}
                             </div>
@@ -197,7 +209,10 @@ export default function ServiceShow({ service, relatedServices, packages, seo }:
             ) : null}
 
             <Section tone="white" className="pt-0 pb-20">
-                <CtaBand whatsappUrl={whatsapp.configured ? whatsapp.url : null} />
+                <CtaBand
+                    whatsappUrl={whatsapp.configured ? whatsappUrl : null}
+                    whatsappMetadata={{ source: 'service_cta_band', service_slug: service.slug }}
+                />
             </Section>
         </SiteLayout>
     );

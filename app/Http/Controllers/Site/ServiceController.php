@@ -7,6 +7,7 @@ use App\Http\Presenters\ContentPresenter;
 use App\Models\Package;
 use App\Models\Service;
 use App\Services\Seo;
+use App\Services\WhatsAppLink;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -43,6 +44,10 @@ class ServiceController extends Controller
             'service' => ContentPresenter::serviceDetail($service),
             'relatedServices' => $relatedServices->map(fn (Service $item) => ContentPresenter::serviceCard($item))->all(),
             'packages' => $packages->map(fn (Package $package) => ContentPresenter::packageCard($package))->all(),
+            'whatsappUrl' => WhatsAppLink::forContext(
+                'layanan '.$service->title,
+                url('/layanan/'.$service->slug),
+            ),
             'seo' => Seo::make(
                 $service->meta_title ?: $service->title,
                 $service->meta_description ?: $service->summary,

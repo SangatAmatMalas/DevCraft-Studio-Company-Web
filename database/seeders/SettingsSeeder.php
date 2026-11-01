@@ -11,9 +11,9 @@ class SettingsSeeder extends Seeder
     {
         $groups = [
             'brand' => ['brand_name', 'brand_tagline', 'brand_positioning'],
-            'contact' => ['contact_email', 'contact_whatsapp', 'contact_address', 'contact_hours', 'social_github', 'social_linkedin', 'social_instagram', 'social_x'],
+            'contact' => ['contact_email', 'contact_whatsapp', 'contact_address', 'contact_hours', 'social_github', 'social_linkedin', 'social_instagram', 'social_x', 'booking_url', 'booking_label'],
             'seo' => ['seo_default_title', 'seo_default_description', 'analytics_provider', 'analytics_measurement_id', 'search_console_verification'],
-            'home' => ['home_hero_badge', 'home_hero_title', 'home_hero_subtitle', 'home_show_testimonials'],
+            'home' => ['home_hero_badge', 'home_hero_title', 'home_hero_subtitle', 'home_show_testimonials', 'lead_magnet_url', 'lead_magnet_title', 'lead_magnet_description'],
             'mail' => ['lead_notification_email', 'mail_from_name', 'mail_from_address'],
         ];
 

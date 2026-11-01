@@ -1,14 +1,16 @@
-import { Link } from '@inertiajs/react';
-import { ArrowRight, MessageCircle } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { ArrowRight, CalendarClock, MessageCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { useAnalytics } from '@/hooks/use-analytics';
+import type { SharedProps } from '@/types';
 
 export default function CtaBand({
     title = 'Punya kebutuhan yang ingin didiskusikan?',
     description = 'Ceritakan konteks dan batasan Anda. Kami akan membantu memetakan langkah berikutnya tanpa komitmen awal.',
     whatsappUrl,
     whatsappLabel = 'Chat WhatsApp',
+    whatsappMetadata = { source: 'cta_band' },
     contactHref = '/kontak',
     contactLabel = 'Kirim project brief',
 }: {
@@ -16,10 +18,13 @@ export default function CtaBand({
     description?: string;
     whatsappUrl?: string | null;
     whatsappLabel?: string;
+    whatsappMetadata?: Record<string, string>;
     contactHref?: string;
     contactLabel?: string;
 }) {
     const { track } = useAnalytics();
+    const { site } = usePage<SharedProps>().props;
+    const bookingUrl = site.conversion.booking_url;
 
     return (
         <div className="hero-gradient relative overflow-hidden rounded-3xl px-6 py-10 text-white sm:px-10 sm:py-12">
@@ -41,11 +46,23 @@ export default function CtaBand({
                             href={whatsappUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={() => track('whatsapp_click', { metadata: { source: 'cta_band' } })}
+                            onClick={() => track('whatsapp_click', { metadata: whatsappMetadata })}
                             className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
                         >
                             <MessageCircle className="h-4 w-4" aria-hidden="true" />
                             {whatsappLabel}
+                        </a>
+                    ) : null}
+                    {bookingUrl ? (
+                        <a
+                            href={bookingUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => track('booking_click', { metadata: whatsappMetadata })}
+                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/25 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                        >
+                            <CalendarClock className="h-4 w-4" aria-hidden="true" />
+                            {site.conversion.booking_label || 'Jadwalkan konsultasi'}
                         </a>
                     ) : null}
                 </div>

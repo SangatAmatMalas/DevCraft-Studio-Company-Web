@@ -15,14 +15,16 @@ export default function PackageShow({
     package: pkg,
     otherPackages,
     designBrief,
+    whatsappUrl,
     seo,
 }: {
     package: PackageDetail;
     otherPackages: PackageCardType[];
     designBrief: DesignBriefSummary | null;
+    whatsappUrl: string | null;
     seo: Seo;
 }) {
-    const { whatsapp } = usePage<SharedProps>().props;
+    const { site, whatsapp } = usePage<SharedProps>().props;
     const { track } = useAnalytics();
 
     useEffect(() => {
@@ -78,9 +80,9 @@ export default function PackageShow({
                                         <ArrowRight className="h-4 w-4" aria-hidden="true" />
                                     </Link>
                                 </Button>
-                                {whatsapp.configured && whatsapp.url ? (
+                                {whatsapp.configured && whatsappUrl ? (
                                     <a
-                                        href={whatsapp.url}
+                                        href={whatsappUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         onClick={() => track('whatsapp_click', { metadata: { source: 'package_page', package_slug: pkg.slug } })}
@@ -88,6 +90,17 @@ export default function PackageShow({
                                     >
                                         <MessageCircle className="h-4 w-4" aria-hidden="true" />
                                         Chat WhatsApp
+                                    </a>
+                                ) : null}
+                                {site.conversion.booking_url ? (
+                                    <a
+                                        href={site.conversion.booking_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={() => track('booking_click', { entity_type: 'package', entity_id: pkg.id, metadata: { source: 'package_page', package_slug: pkg.slug } })}
+                                        className="inline-flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-50"
+                                    >
+                                        {site.conversion.booking_label || 'Jadwalkan konsultasi'}
                                     </a>
                                 ) : null}
                             </div>
@@ -209,7 +222,8 @@ export default function PackageShow({
                 <CtaBand
                     title="Masih ragu memilih paket?"
                     description="Kirim kebutuhan Anda. Jika tidak ada paket yang cocok, kami akan menyusun ruang lingkup khusus."
-                    whatsappUrl={whatsapp.configured ? whatsapp.url : null}
+                    whatsappUrl={whatsapp.configured ? whatsappUrl : null}
+                    whatsappMetadata={{ source: 'package_cta_band', package_slug: pkg.slug }}
                 />
             </Section>
         </SiteLayout>

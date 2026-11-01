@@ -31,6 +31,8 @@ export default function SettingsEdit({
         contact_whatsapp: string(settings.contact_whatsapp),
         contact_address: string(settings.contact_address),
         contact_hours: string(settings.contact_hours),
+        booking_url: string(settings.booking_url),
+        booking_label: string(settings.booking_label),
         social_github: string(settings.social_github),
         social_linkedin: string(settings.social_linkedin),
         social_instagram: string(settings.social_instagram),
@@ -45,6 +47,9 @@ export default function SettingsEdit({
         home_hero_title: string(settings.home_hero_title),
         home_hero_subtitle: string(settings.home_hero_subtitle),
         home_show_testimonials: settings.home_show_testimonials === '1',
+        lead_magnet_url: string(settings.lead_magnet_url),
+        lead_magnet_title: string(settings.lead_magnet_title),
+        lead_magnet_description: string(settings.lead_magnet_description),
         lead_notification_email: string(settings.lead_notification_email),
         mail_from_name: string(settings.mail_from_name),
         mail_from_address: string(settings.mail_from_address),
@@ -118,13 +123,25 @@ export default function SettingsEdit({
                         <Field label="Jam kerja" htmlFor="contact_hours" error={form.errors.contact_hours}>
                             <Input id="contact_hours" value={form.data.contact_hours} onChange={(event) => form.setData('contact_hours', event.target.value)} />
                         </Field>
-                        <Field label="Template pesan WhatsApp" htmlFor="whatsapp_template" hint="Gunakan :service atau :package sebagai placeholder." error={form.errors.whatsapp_template}>
+                        <Field label="Template pesan WhatsApp" htmlFor="whatsapp_template" hint="Placeholder tersedia: {name}, {need}, dan {url}." error={form.errors.whatsapp_template}>
                             <Textarea
                                 id="whatsapp_template"
                                 rows={3}
                                 value={form.data.whatsapp_template}
                                 onChange={(event) => form.setData('whatsapp_template', event.target.value)}
                             />
+                        </Field>
+                        <Field label="URL booking" htmlFor="booking_url" hint="Tautan eksternal Cal.com, Calendly, atau layanan booking lain. Kosongkan jika belum digunakan." error={form.errors.booking_url}>
+                            <Input
+                                id="booking_url"
+                                type="url"
+                                value={form.data.booking_url}
+                                onChange={(event) => form.setData('booking_url', event.target.value)}
+                                placeholder="https://cal.com/…"
+                            />
+                        </Field>
+                        <Field label="Label booking" htmlFor="booking_label" error={form.errors.booking_label}>
+                            <Input id="booking_label" value={form.data.booking_label} onChange={(event) => form.setData('booking_label', event.target.value)} />
                         </Field>
                     </FormSection>
                 </div>
@@ -202,6 +219,26 @@ export default function SettingsEdit({
                         onChange={(value) => form.setData('home_show_testimonials', value)}
                         error={form.errors.home_show_testimonials}
                     />
+                    <Field label="URL resource / checklist" htmlFor="lead_magnet_url" hint="Tautan publik ke PDF atau resource. Tidak ada form email; pengunjung dapat mengaksesnya langsung." error={form.errors.lead_magnet_url}>
+                        <Input
+                            id="lead_magnet_url"
+                            type="url"
+                            value={form.data.lead_magnet_url}
+                            onChange={(event) => form.setData('lead_magnet_url', event.target.value)}
+                            placeholder="https://…/checklist-brief.pdf"
+                        />
+                    </Field>
+                    <Field label="Judul resource" htmlFor="lead_magnet_title" error={form.errors.lead_magnet_title}>
+                        <Input id="lead_magnet_title" value={form.data.lead_magnet_title} onChange={(event) => form.setData('lead_magnet_title', event.target.value)} />
+                    </Field>
+                    <Field label="Deskripsi resource" htmlFor="lead_magnet_description" error={form.errors.lead_magnet_description}>
+                        <Textarea
+                            id="lead_magnet_description"
+                            rows={2}
+                            value={form.data.lead_magnet_description}
+                            onChange={(event) => form.setData('lead_magnet_description', event.target.value)}
+                        />
+                    </Field>
                 </FormSection>
 
                 <FormSection title="SEO & analytics">

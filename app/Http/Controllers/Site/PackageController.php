@@ -8,6 +8,7 @@ use App\Models\DesignBrief;
 use App\Models\Package;
 use App\Services\AnalyticsRecorder;
 use App\Services\Seo;
+use App\Services\WhatsAppLink;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -74,6 +75,10 @@ class PackageController extends Controller
             'package' => ContentPresenter::packageDetail($package),
             'otherPackages' => $others->map(fn (Package $item) => ContentPresenter::packageCard($item))->all(),
             'designBrief' => $this->designBriefPayload($brief),
+            'whatsappUrl' => WhatsAppLink::forContext(
+                'paket '.$package->name,
+                url('/paket/'.$package->slug),
+            ),
             'seo' => Seo::make(
                 $package->meta_title ?: $package->name,
                 $package->meta_description ?: $package->tagline,

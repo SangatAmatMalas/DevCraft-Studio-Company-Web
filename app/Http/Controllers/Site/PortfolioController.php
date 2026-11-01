@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\PortfolioProject;
 use App\Models\Technology;
 use App\Services\Seo;
+use App\Services\WhatsAppLink;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -138,6 +139,10 @@ class PortfolioController extends Controller
             'project' => ContentPresenter::projectDetail($project),
             'relatedProjects' => $related->map(fn (PortfolioProject $item) => ContentPresenter::projectCard($item))->all(),
             'latestProjects' => $latest->map(fn (PortfolioProject $item) => ContentPresenter::projectCard($item))->all(),
+            'whatsappUrl' => WhatsAppLink::forContext(
+                'proyek serupa dengan '.$project->title,
+                url('/portfolio/'.$project->slug),
+            ),
             'seo' => Seo::make(
                 $project->meta_title ?: $project->title,
                 $project->meta_description ?: $project->excerpt,

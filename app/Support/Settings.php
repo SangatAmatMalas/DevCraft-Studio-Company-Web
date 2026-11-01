@@ -77,6 +77,13 @@ class Settings
                 'instagram' => static::get('social_instagram'),
                 'x' => static::get('social_x'),
             ],
+            'conversion' => [
+                'booking_url' => static::get('booking_url'),
+                'booking_label' => static::get('booking_label'),
+                'lead_magnet_url' => static::get('lead_magnet_url'),
+                'lead_magnet_title' => static::get('lead_magnet_title'),
+                'lead_magnet_description' => static::get('lead_magnet_description'),
+            ],
         ];
     }
 

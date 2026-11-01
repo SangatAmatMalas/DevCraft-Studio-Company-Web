@@ -2,6 +2,7 @@
 
 use App\Models\DesignBrief;
 use App\Models\Lead;
+use App\Support\Settings;
 
 function validDesignLeadPayload(array $overrides = []): array
 {
@@ -108,4 +109,20 @@ it('does not expose expired previews', function () {
     ]);
 
     $this->get("/desain/{$brief->token}")->assertGone();
+});
+
+it('includes the design context in the result whatsapp link', function () {
+    Settings::set('contact_whatsapp', '081234567890');
+    Settings::forget();
+
+    $this->post('/desain', validDesignBriefPayload())->assertRedirect();
+
+    $brief = DesignBrief::query()->firstOrFail();
+
+    $this->get("/desain/{$brief->token}")
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->where(
+            'brief.whatsapp_url',
+            fn ($url) => is_string($url) && str_contains(urldecode($url), 'preview desain Studio Pagi'),
+        ));
 });

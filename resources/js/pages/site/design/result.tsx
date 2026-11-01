@@ -1,4 +1,4 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import {
     ArrowLeft,
     ArrowRight,
@@ -16,13 +16,15 @@ import {
 import { useState } from 'react';
 
 import Breadcrumbs from '@/components/site/breadcrumbs';
+import DesignShareActions from '@/components/site/design-share-actions';
 import SeoHead from '@/components/site/seo-head';
 import SiteLayout from '@/components/site/site-layout';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { formatShortDate } from '@/lib/format';
-import type { DesignBriefResult, DesignVariant, Seo } from '@/types';
+import { useAnalytics } from '@/hooks/use-analytics';
+import type { DesignBriefResult, DesignVariant, Seo, SharedProps } from '@/types';
 
 type Device = 'desktop' | 'tablet' | 'mobile';
 
@@ -33,6 +35,8 @@ const DEVICES: { key: Device; label: string; Icon: typeof Monitor; width: string
 ];
 
 export default function DesignResult({ brief, seo }: { brief: DesignBriefResult; seo: Seo }) {
+    const { site } = usePage<SharedProps>().props;
+    const { track } = useAnalytics();
     const [previewing, setPreviewing] = useState<DesignVariant | null>(null);
     const [device, setDevice] = useState<Device>('desktop');
     const [selecting, setSelecting] = useState<string | null>(null);
@@ -83,6 +87,14 @@ export default function DesignResult({ brief, seo }: { brief: DesignBriefResult;
                             </p>
                             <p className="mt-1">Tautan pribadi · tidak diindeks mesin pencari</p>
                             {brief.expires_at ? <p>Berlaku sampai {formatShortDate(brief.expires_at)}</p> : null}
+                            <div className="mt-3">
+                                <DesignShareActions
+                                    url={typeof window === 'undefined' ? `/desain/${brief.token}` : window.location.href}
+                                    title={`Opsi desain ${brief.brand_name}`}
+                                    metadata={{ template: brief.chosen ?? 'all', design_category: brief.category, source: 'design_result' }}
+                                    compact
+                                />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -131,6 +143,28 @@ export default function DesignResult({ brief, seo }: { brief: DesignBriefResult;
                                             <ArrowRight className="h-4 w-4" aria-hidden="true" />
                                         </Link>
                                     </Button>
+                                    {brief.whatsapp_url ? (
+                                        <a
+                                            href={brief.whatsapp_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={() => track('whatsapp_click', { metadata: { template: chosenVariant.key, design_category: brief.category, source: 'design_result' } })}
+                                            className="mt-2 inline-flex w-full items-center justify-center rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-navy transition-colors hover:bg-ice"
+                                        >
+                                            Chat tentang desain ini
+                                        </a>
+                                    ) : null}
+                                    {site.conversion.booking_url ? (
+                                        <a
+                                            href={site.conversion.booking_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={() => track('booking_click', { metadata: { template: chosenVariant.key, design_category: brief.category, source: 'design_result' } })}
+                                            className="mt-1.5 text-center text-xs font-semibold text-brand-700 hover:underline"
+                                        >
+                                            {site.conversion.booking_label || 'Jadwalkan konsultasi'}
+                                        </a>
+                                    ) : null}
                                 </div>
 
                                 <div className="flex flex-col rounded-xl border border-border bg-white p-5">

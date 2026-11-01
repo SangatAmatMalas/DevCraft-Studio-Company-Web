@@ -34,6 +34,13 @@ export interface Site {
         instagram: string | null;
         x: string | null;
     };
+    conversion: {
+        booking_url: string | null;
+        booking_label: string | null;
+        lead_magnet_url: string | null;
+        lead_magnet_title: string | null;
+        lead_magnet_description: string | null;
+    };
 }
 
 export interface AuthUser {
@@ -133,6 +140,7 @@ export interface DesignBriefResult extends Omit<DesignBriefPreview, 'description
     expires_at: string | null;
     lead_url: string;
     packages_url: string;
+    whatsapp_url: string | null;
 }
 
 export interface TechnologyTag {

@@ -2,6 +2,7 @@ import { Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Check } from 'lucide-react';
 
 import PreviewRenderer from '@/components/preview/renderer';
+import DesignShareActions from '@/components/site/design-share-actions';
 import SeoHead from '@/components/site/seo-head';
 import { Button } from '@/components/ui/button';
 import type { DesignBriefPreview, Seo } from '@/types';
@@ -38,10 +39,16 @@ export default function PreviewShow({
                             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                             Kembali ke 3 opsi
                         </Link>
-                        <div className="flex items-center gap-3">
-                            <p className="hidden text-xs text-muted-foreground sm:block">
+                        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                            <p className="hidden text-xs text-muted-foreground lg:block">
                                 Preview sementara · tidak diindeks mesin pencari
                             </p>
+                            <DesignShareActions
+                                url={typeof window === 'undefined' ? `/desain/${brief.token}/preview/${template}` : window.location.href}
+                                title={`Preview desain ${brief.brand_name}`}
+                                metadata={{ template, design_category: brief.category, source: 'design_preview' }}
+                                compact
+                            />
                             <Button onClick={select} disabled={form.processing} className="rounded-xl">
                                 <Check className="h-4 w-4" aria-hidden="true" />
                                 {form.processing ? 'Menyimpan…' : 'Pakai desain ini'}

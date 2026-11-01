@@ -1,10 +1,13 @@
 <?php
 
+use App\Models\AnalyticsEvent;
+use App\Models\Package;
 use App\Models\Page;
 use App\Models\PortfolioProject;
 use App\Models\Service;
 use App\Models\TeamMember;
 use App\Models\Testimonial;
+use App\Support\Settings;
 
 it('renders the public home page', function () {
     Service::query()->create([
@@ -143,3 +146,73 @@ it('shows only approved team members on the about page', function () {
             ->has('team', 1)
             ->where('team.0.name', 'Sudah Disetujui'));
 });
+
+it('adds page context to whatsapp links on detail pages', function () {
+    Settings::set('contact_whatsapp', '081234567890');
+    Settings::forget();
+
+    $service = Service::query()->create([
+        'title' => 'Website Development',
+        'slug' => 'website-development',
+        'summary' => 'Website yang jelas dan cepat.',
+        'status' => 'published',
+        'published_at' => now(),
+    ]);
+
+    $package = Package::query()->create([
+        'name' => 'Company Profile',
+        'slug' => 'company-profile',
+        'currency' => 'IDR',
+        'billing_type' => 'one_time',
+        'status' => 'published',
+    ]);
+
+    $project = PortfolioProject::query()->create([
+        'title' => 'Internal Tool',
+        'slug' => 'internal-tool',
+        'excerpt' => 'Alat internal untuk operasional.',
+        'project_type' => 'internal_project',
+        'project_status' => 'completed',
+        'status' => 'published',
+        'published_at' => now()->subDay(),
+    ]);
+
+    $this->get('/layanan/'.$service->slug)
+        ->assertInertia(fn ($page) => $page->where(
+            'whatsappUrl',
+            fn ($url) => is_string($url) && str_contains(urldecode($url), 'layanan Website Development'),
+        ));
+
+    $this->get('/paket/'.$package->slug)
+        ->assertInertia(fn ($page) => $page->where(
+            'whatsappUrl',
+            fn ($url) => is_string($url) && str_contains(urldecode($url), 'paket Company Profile'),
+        ));
+
+    $this->get('/portfolio/'.$project->slug)
+        ->assertInertia(fn ($page) => $page->where(
+            'whatsappUrl',
+            fn ($url) => is_string($url) && str_contains(urldecode($url), 'proyek serupa dengan Internal Tool'),
+        ));
+});
+
+it('exposes booking and resource settings to the public site', function () {
+    Settings::set('booking_url', 'https://cal.com/devcraft');
+    Settings::set('lead_magnet_url', 'https://example.com/checklist-brief.pdf');
+    Settings::forget();
+
+    $this->get('/')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->where('site.conversion.booking_url', 'https://cal.com/devcraft')
+            ->where('site.conversion.lead_magnet_url', 'https://example.com/checklist-brief.pdf'));
+});
+
+it('accepts the new conversion analytics events', function (string $event) {
+    $this->postJson('/analytics/event', [
+        'event' => $event,
+        'metadata' => ['source' => 'test'],
+    ])->assertOk();
+
+    expect(AnalyticsEvent::query()->where('event_name', $event)->exists())->toBeTrue();
+})->with(['design_shared', 'booking_click', 'lead_magnet_click']);

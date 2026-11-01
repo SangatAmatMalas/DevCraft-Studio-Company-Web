@@ -25,6 +25,9 @@ class AnalyticsRecorder
         'design_selected',
         'design_cta_lead',
         'design_cta_packages',
+        'design_shared',
+        'booking_click',
+        'lead_magnet_click',
     ];
 
     /** Metadata keys that are safe to persist (never personal data). */
