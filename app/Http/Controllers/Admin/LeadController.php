@@ -4,14 +4,20 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\LeadStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\LeadBulkRequest;
+use App\Http\Requests\Admin\LeadFollowUpRequest;
 use App\Http\Requests\Admin\LeadNoteRequest;
 use App\Http\Requests\Admin\LeadUpdateRequest;
 use App\Models\Lead;
 use App\Models\LeadAttachment;
 use App\Models\LeadNote;
+use App\Models\LeadReplyTemplate;
+use App\Models\MailDelivery;
 use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response as ResponseFactory;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -77,7 +83,9 @@ class LeadController extends Controller
 
     public function show(Lead $lead): Response
     {
-        $lead->load(['package:id,name,slug', 'portfolioProject:id,title,slug', 'designBrief', 'notes.user:id,name', 'attachments']);
+        $lead->load(['package:id,name,slug', 'portfolioProject:id,title,slug', 'designBrief', 'notes.user:id,name', 'attachments', 'mailDeliveries']);
+
+        $mailDeliveries = $lead->mailDeliveries;
 
         return Inertia::render('admin/leads/show', [
             'lead' => [
@@ -124,9 +132,46 @@ class LeadController extends Controller
                     'author' => $note->user?->name ?? 'Sistem',
                     'created_at' => $note->created_at?->toIso8601String(),
                 ])->all(),
+                'mail' => $this->mailSummary($mailDeliveries),
             ],
+            'templates' => LeadReplyTemplate::query()
+                ->active()
+                ->ordered()
+                ->get()
+                ->map(fn (LeadReplyTemplate $template) => [
+                    'id' => $template->id,
+                    'title' => $template->title,
+                    'body' => $template->renderFor($lead),
+                ])->all(),
             'statuses' => LeadStatus::options(),
         ]);
+    }
+
+    /**
+     * Latest delivery per email type, so the detail page can show a compact
+     * status without listing every attempt.
+     *
+     * @param  Collection<int, MailDelivery>  $deliveries
+     * @return array<string, array<string, mixed>|null>
+     */
+    protected function mailSummary($deliveries): array
+    {
+        $summary = [];
+
+        foreach ([MailDelivery::TYPE_TEAM_NOTIFICATION, MailDelivery::TYPE_LEAD_CONFIRMATION] as $type) {
+            $latest = $deliveries->firstWhere('type', $type);
+
+            $summary[$type] = $latest ? [
+                'status' => $latest->status,
+                'status_label' => $latest->statusLabel(),
+                'tone' => $latest->statusTone(),
+                'recipient' => $latest->recipient,
+                'error' => $latest->error,
+                'created_at' => $latest->created_at?->toIso8601String(),
+            ] : null;
+        }
+
+        return $summary;
     }
 
     public function update(LeadUpdateRequest $request, Lead $lead): RedirectResponse
@@ -136,8 +181,13 @@ class LeadController extends Controller
 
         $updates = [
             'status' => $newStatus,
-            'next_follow_up_at' => $request->validated('next_follow_up_at'),
         ];
+
+        // Only touch the follow-up date when it is part of the payload, so a
+        // plain status change never wipes a scheduled follow-up.
+        if ($request->exists('next_follow_up_at')) {
+            $updates['next_follow_up_at'] = $request->validated('next_follow_up_at');
+        }
 
         // Only mark as contacted when the status actually moves into a contact stage.
         if ($newStatus !== $previous && in_array($newStatus, [
@@ -158,6 +208,69 @@ class LeadController extends Controller
         ]);
 
         return back()->with('success', 'Status lead diperbarui.');
+    }
+
+    /**
+     * Record a contact attempt without touching the pipeline status: "already
+     * reached out" and "qualified" are separate facts.
+     */
+    public function markContacted(Lead $lead): RedirectResponse
+    {
+        $lead->update(['last_contacted_at' => now()]);
+
+        ActivityLogger::log('lead.marked_contacted', $lead, [
+            'last_contacted_at' => $lead->last_contacted_at?->toDateTimeString(),
+        ]);
+
+        return back()->with('success', 'Lead ditandai sudah dihubungi.');
+    }
+
+    public function updateFollowUp(LeadFollowUpRequest $request, Lead $lead): RedirectResponse
+    {
+        $lead->update(['next_follow_up_at' => $request->validated('next_follow_up_at')]);
+
+        ActivityLogger::log('lead.follow_up_scheduled', $lead, [
+            'next_follow_up_at' => $lead->next_follow_up_at?->toDateTimeString(),
+        ]);
+
+        return back()->with('success', 'Jadwal follow-up diperbarui.');
+    }
+
+    public function bulk(LeadBulkRequest $request): RedirectResponse
+    {
+        $action = (string) $request->validated('action');
+        $ids = $request->validated('ids');
+
+        $leads = Lead::query()->whereKey($ids)->get();
+
+        DB::transaction(function () use ($leads, $action) {
+            foreach ($leads as $lead) {
+                if ($action === 'archive') {
+                    $previous = $lead->status->value;
+                    $lead->update(['status' => LeadStatus::Archived->value]);
+
+                    ActivityLogger::log('lead.status_changed', $lead, [
+                        'from' => $previous,
+                        'to' => LeadStatus::Archived->value,
+                        'bulk' => true,
+                    ]);
+                } else {
+                    $lead->update(['last_contacted_at' => now()]);
+                }
+            }
+        });
+
+        ActivityLogger::log('lead.bulk_'.$action, null, [
+            'ids' => $leads->pluck('id')->all(),
+            'count' => $leads->count(),
+        ]);
+
+        return back()->with(
+            'success',
+            $action === 'archive'
+                ? $leads->count().' lead diarsipkan.'
+                : $leads->count().' lead ditandai sudah dihubungi.',
+        );
     }
 
     public function downloadAttachment(Lead $lead, LeadAttachment $attachment): StreamedResponse

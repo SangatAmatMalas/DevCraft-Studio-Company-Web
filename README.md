@@ -217,6 +217,17 @@ Tiga pengaturan opsional di **Admin → Pengaturan** mengaktifkan jalur konversi
 
 Deep link WhatsApp di halaman detail dibangun di server (`WhatsAppLink::forContext`), sehingga pesan tidak pernah memuat data yang diketik pengunjung.
 
+### 7.2b Email lead & tindak lanjut
+
+- **Email dikirim setelah respons selesai.** `LeadNotifier::queue()` memakai `Bus::dispatchAfterResponse()` dengan job yang tidak mengimplementasikan `ShouldQueue`, jadi pengunjung tidak menunggu SMTP dan tetap tidak perlu queue worker. Kegagalan kirim tidak pernah membatalkan penyimpanan lead.
+- **Riwayat pengiriman** tersimpan di tabel `mail_deliveries` (`team_notification`, `lead_confirmation`, `test`) dengan status `sent`, `failed`, atau `skipped`. Detail lead menampilkan status terakhir per jenis, dan dashboard menampilkan email gagal dalam 7 hari terakhir.
+- **Tombol “Kirim email uji”** ada di **Admin → Pengaturan** (throttle 5/menit, hanya `admin`/`super_admin`). Hasilnya langsung tampil sebagai flash dan tercatat sebagai `test`.
+- **Tandai sudah dihubungi** mengisi `last_contacted_at` tanpa mengubah status pipeline. Jadwal `next_follow_up_at` punya form sendiri, dan perubahan status tidak menghapus jadwal yang sudah ada.
+- **Bulk action** di daftar lead terbatas pada arsipkan dan tandai sudah dihubungi, maksimal 100 lead per aksi.
+- **Template balasan** dikelola di **Admin → Leads → Template balasan**. Placeholder yang diizinkan hanya `{name}`, `{service}`, dan `{package}`; placeholder asing ditolak saat validasi. Tidak ada riwayat email terkirim, karena sistem tidak menyimpan salinan pesan.
+
+Template awal diisi oleh `LeadReplyTemplateSeeder` dengan nada netral: tanpa SLA, harga, atau klaim hasil.
+
 ### 7.3 Nginx + PHP-FPM
 
 ```nginx

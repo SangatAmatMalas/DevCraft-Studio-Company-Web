@@ -52,7 +52,18 @@ interface DashboardProps {
         next_follow_up_at: string | null;
         created_at: string | null;
     }[];
-    notifications: { mail_configured: boolean };
+    notifications: {
+        mail_configured: boolean;
+        mail_failed_7_days: number;
+        recent_mail_failures: {
+            id: number;
+            type_label: string;
+            recipient: string;
+            error: string | null;
+            created_at: string | null;
+            lead: { id: number; name: string } | null;
+        }[];
+    };
     recentLeads: {
         id: number;
         name: string;
@@ -190,6 +201,51 @@ export default function Dashboard({ stats, leadsByStatus, leadTrend, recentLeads
                             </Link>{' '}
                             agar tim juga menerima email saat brief masuk.
                         </p>
+                    </div>
+                </div>
+            ) : null}
+
+            {notifications.mail_failed_7_days > 0 ? (
+                <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
+                    <div className="flex items-start gap-3">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden="true" />
+                        <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-red-900">
+                                {notifications.mail_failed_7_days} email gagal terkirim dalam 7 hari terakhir
+                            </p>
+                            <p className="mt-0.5 text-sm leading-relaxed text-red-800">
+                                Lead tetap tersimpan. Periksa konfigurasi SMTP atau kirim email uji dari Pengaturan.
+                            </p>
+
+                            {notifications.recent_mail_failures.length > 0 ? (
+                                <ul className="mt-3 space-y-1.5">
+                                    {notifications.recent_mail_failures.map((failure) => (
+                                        <li key={failure.id} className="text-xs leading-relaxed text-red-800">
+                                            <span className="font-semibold">{failure.type_label}</span> ke {failure.recipient}
+                                            {failure.lead ? (
+                                                <>
+                                                    {' · '}
+                                                    <Link
+                                                        href={`/admin/leads/${failure.lead.id}`}
+                                                        className="font-semibold underline underline-offset-4"
+                                                    >
+                                                        {failure.lead.name}
+                                                    </Link>
+                                                </>
+                                            ) : null}
+                                            {failure.error ? <span className="block truncate text-red-700/80">{failure.error}</span> : null}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : null}
+
+                            <Link
+                                href="/admin/settings"
+                                className="mt-2 inline-block text-xs font-semibold text-red-900 underline underline-offset-4"
+                            >
+                                Buka pengaturan email
+                            </Link>
+                        </div>
                     </div>
                 </div>
             ) : null}

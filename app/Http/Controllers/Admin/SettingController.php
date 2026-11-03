@@ -4,10 +4,17 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SettingRequest;
+use App\Mail\TestMail;
+use App\Models\MailDelivery;
 use App\Services\ActivityLogger;
+use App\Services\LeadNotifier;
 use App\Support\Settings;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
+use Throwable;
 
 class SettingController extends Controller
 {
@@ -61,6 +68,34 @@ class SettingController extends Controller
         ActivityLogger::log('settings.updated', null, ['keys' => array_keys($data)]);
 
         return back()->with('success', 'Pengaturan disimpan.');
+    }
+
+    public function sendTestEmail(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $user || blank($user->email)) {
+            return back()->with('error', 'Akun Anda belum memiliki alamat email.');
+        }
+
+        LeadNotifier::configureMailer();
+
+        try {
+            Mail::to($user->email)->send(new TestMail($user->name));
+            LeadNotifier::recordTest($user->email, MailDelivery::STATUS_SENT);
+        } catch (Throwable $exception) {
+            LeadNotifier::recordTest($user->email, MailDelivery::STATUS_FAILED, $exception->getMessage());
+
+            ActivityLogger::log('settings.test_email_failed', null, [
+                'error' => mb_substr($exception->getMessage(), 0, 300),
+            ]);
+
+            return back()->with('error', 'Email uji gagal dikirim: '.mb_substr($exception->getMessage(), 0, 300));
+        }
+
+        ActivityLogger::log('settings.test_email_sent', null, ['recipient' => $user->email]);
+
+        return back()->with('success', 'Email uji dikirim ke '.$user->email.'.');
     }
 
     protected function group(string $key): string

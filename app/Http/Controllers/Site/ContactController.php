@@ -148,8 +148,7 @@ class ContactController extends Controller
             ]),
         );
 
-        LeadNotifier::notify($lead);
-        LeadNotifier::sendConfirmation($lead);
+        LeadNotifier::queue($lead);
 
         return redirect()
             ->route('kontak')

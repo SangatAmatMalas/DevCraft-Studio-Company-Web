@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { Download, Search } from 'lucide-react';
+import { Archive, Download, PhoneCall, Search, X } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 
 import AdminLayout from '@/components/admin/admin-layout';
@@ -7,6 +7,13 @@ import Pagination from '@/components/admin/pagination';
 import Panel from '@/components/admin/panel';
 import StatusBadge from '@/components/admin/status-badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { formatDateTime } from '@/lib/format';
@@ -35,6 +42,37 @@ export default function LeadsIndex({
     statuses: Record<string, string>;
 }) {
     const [term, setTerm] = useState(filters.q);
+    const [selected, setSelected] = useState<number[]>([]);
+    const [bulkAction, setBulkAction] = useState<'archive' | 'contacted' | null>(null);
+    const [bulkProcessing, setBulkProcessing] = useState(false);
+
+    const toggle = (id: number) => {
+        setSelected((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+    };
+
+    const toggleAll = () => {
+        setSelected((current) => (current.length === leads.data.length ? [] : leads.data.map((lead) => lead.id)));
+    };
+
+    const runBulk = () => {
+        if (!bulkAction || selected.length === 0) {
+            return;
+        }
+
+        router.patch(
+            '/admin/leads/bulk',
+            { action: bulkAction, ids: selected },
+            {
+                preserveScroll: true,
+                onStart: () => setBulkProcessing(true),
+                onSuccess: () => setSelected([]),
+                onFinish: () => {
+                    setBulkProcessing(false);
+                    setBulkAction(null);
+                },
+            },
+        );
+    };
 
     const query = (patch: Partial<typeof filters>) => {
         const next = { ...filters, q: term, ...patch };
@@ -133,6 +171,38 @@ export default function LeadsIndex({
                 </form>
             </Panel>
 
+            {selected.length > 0 ? (
+                <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-medium text-brand-900">{selected.length} lead dipilih</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg bg-white"
+                            onClick={() => setBulkAction('contacted')}
+                        >
+                            <PhoneCall className="h-3.5 w-3.5" aria-hidden="true" />
+                            Tandai dihubungi
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg bg-white"
+                            onClick={() => setBulkAction('archive')}
+                        >
+                            <Archive className="h-3.5 w-3.5" aria-hidden="true" />
+                            Arsipkan
+                        </Button>
+                        <Button type="button" variant="ghost" size="sm" className="rounded-lg" onClick={() => setSelected([])}>
+                            <X className="h-3.5 w-3.5" aria-hidden="true" />
+                            Batal
+                        </Button>
+                    </div>
+                </div>
+            ) : null}
+
             <Panel className="mt-5" bodyClassName="p-0">
                 {leads.data.length > 0 ? (
                     <>
@@ -140,6 +210,15 @@ export default function LeadsIndex({
                             <table className="table-shell">
                                 <thead>
                                     <tr>
+                                        <th className="w-10">
+                                            <input
+                                                type="checkbox"
+                                                checked={selected.length === leads.data.length}
+                                                onChange={toggleAll}
+                                                aria-label="Pilih semua lead di halaman ini"
+                                                className="h-4 w-4 accent-brand-600"
+                                            />
+                                        </th>
                                         <th>Nama</th>
                                         <th>Organisasi</th>
                                         <th>Konteks</th>
@@ -152,6 +231,15 @@ export default function LeadsIndex({
                                 <tbody>
                                     {leads.data.map((lead) => (
                                         <tr key={lead.id}>
+                                            <td>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selected.includes(lead.id)}
+                                                    onChange={() => toggle(lead.id)}
+                                                    aria-label={`Pilih ${lead.name}`}
+                                                    className="h-4 w-4 accent-brand-600"
+                                                />
+                                            </td>
                                             <td>
                                                 <Link href={`/admin/leads/${lead.id}`} className="font-medium text-navy hover:text-brand-700">
                                                     {lead.name}
@@ -201,6 +289,32 @@ export default function LeadsIndex({
                     </div>
                 )}
             </Panel>
+
+            <Dialog open={bulkAction !== null} onOpenChange={(open) => (!open ? setBulkAction(null) : null)}>
+                <DialogContent>
+                    <DialogTitle className="font-display text-base font-bold text-navy">
+                        {bulkAction === 'archive' ? `Arsipkan ${selected.length} lead?` : `Tandai ${selected.length} lead sudah dihubungi?`}
+                    </DialogTitle>
+                    <DialogDescription className="mt-1.5 leading-relaxed">
+                        {bulkAction === 'archive'
+                            ? 'Lead akan dipindah ke status Archived. Data, catatan, dan lampiran tetap tersimpan.'
+                            : 'Hanya waktu kontak terakhir yang dicatat. Status lead tidak berubah.'}
+                    </DialogDescription>
+                    <DialogFooter className="mt-5">
+                        <Button type="button" variant="outline" onClick={() => setBulkAction(null)} disabled={bulkProcessing}>
+                            Batal
+                        </Button>
+                        <Button
+                            type="button"
+                            variant={bulkAction === 'archive' ? 'destructive' : 'default'}
+                            onClick={runBulk}
+                            disabled={bulkProcessing}
+                        >
+                            {bulkProcessing ? 'Memproses…' : bulkAction === 'archive' ? 'Ya, arsipkan' : 'Ya, tandai'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AdminLayout>
     );
 }

@@ -80,6 +80,13 @@ const NAV: NavGroup[] = [
                 match: startsWith('/admin/design-briefs'),
                 visible: canManageLeads,
             },
+            {
+                label: 'Template balasan',
+                href: '/admin/lead-templates',
+                icon: MessageSquareQuote,
+                match: startsWith('/admin/lead-templates'),
+                visible: canManageLeads,
+            },
         ],
     },
     {

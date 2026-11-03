@@ -1,5 +1,5 @@
 import { useForm } from '@inertiajs/react';
-import { ExternalLink, Save, ShieldAlert } from 'lucide-react';
+import { ExternalLink, Save, Send, ShieldAlert } from 'lucide-react';
 import { FormEvent } from 'react';
 
 import AdminLayout from '@/components/admin/admin-layout';
@@ -63,6 +63,12 @@ export default function SettingsEdit({
     const submit = (event: FormEvent) => {
         event.preventDefault();
         form.put('/admin/settings', { preserveScroll: true, onSuccess: () => form.reset('smtp_password') });
+    };
+
+    const testMail = useForm({});
+
+    const sendTestEmail = () => {
+        testMail.post('/admin/settings/test-email', { preserveScroll: true });
     };
 
     return (
@@ -389,6 +395,23 @@ export default function SettingsEdit({
                     <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-900">
                         <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
                         Kata sandi SMTP disimpan terenkripsi. Pastikan konfigurasi email diuji sebelum situs menerima brief produksi.
+                    </div>
+
+                    <div className="flex flex-col gap-2 rounded-xl border border-border bg-ice p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                            Simpan perubahan dulu, lalu kirim email uji ke alamat akun Anda. Hasilnya ikut tercatat sebagai riwayat pengiriman.
+                        </p>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="shrink-0 rounded-lg bg-white"
+                            onClick={sendTestEmail}
+                            disabled={testMail.processing}
+                        >
+                            <Send className="h-3.5 w-3.5" aria-hidden="true" />
+                            {testMail.processing ? 'Mengirim…' : 'Kirim email uji'}
+                        </Button>
                     </div>
                 </FormSection>
 

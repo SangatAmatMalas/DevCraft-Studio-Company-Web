@@ -1,6 +1,6 @@
 import { Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, CheckCircle2, ExternalLink, Mail, MessageCircle, Save, Sparkles, User } from 'lucide-react';
-import { FormEvent } from 'react';
+import { ArrowLeft, Check, CheckCircle2, Copy, ExternalLink, Mail, MessageCircle, PhoneCall, Save, Sparkles, User } from 'lucide-react';
+import { FormEvent, useState } from 'react';
 
 import AdminLayout from '@/components/admin/admin-layout';
 import Panel from '@/components/admin/panel';
@@ -12,6 +12,15 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { NativeSelect } from '@/components/ui/native-select';
 import { formatDateTime } from '@/lib/format';
+
+interface MailStatus {
+    status: string;
+    status_label: string;
+    tone: string;
+    recipient: string;
+    error: string | null;
+    created_at: string | null;
+}
 
 interface LeadDetail {
     id: number;
@@ -46,6 +55,16 @@ interface LeadDetail {
         result_url: string;
     } | null;
     notes: { id: number; note: string; author: string; created_at: string | null }[];
+    mail: {
+        team_notification: MailStatus | null;
+        lead_confirmation: MailStatus | null;
+    };
+}
+
+interface ReplyTemplate {
+    id: number;
+    title: string;
+    body: string;
 }
 
 const PREFERRED_LABELS: Record<string, string> = {
@@ -54,16 +73,38 @@ const PREFERRED_LABELS: Record<string, string> = {
     phone: 'Telepon',
 };
 
-export default function LeadShow({ lead, statuses }: { lead: LeadDetail; statuses: Record<string, string> }) {
+export default function LeadShow({
+    lead,
+    statuses,
+    templates,
+}: {
+    lead: LeadDetail;
+    statuses: Record<string, string>;
+    templates: ReplyTemplate[];
+}) {
     const statusForm = useForm({
         status: lead.status,
         next_follow_up_at: lead.next_follow_up_at ? lead.next_follow_up_at.slice(0, 10) : '',
     });
+    const followUpForm = useForm({
+        next_follow_up_at: lead.next_follow_up_at ? lead.next_follow_up_at.slice(0, 10) : '',
+    });
+    const contactedForm = useForm({});
     const noteForm = useForm({ note: '' });
+    const [copiedId, setCopiedId] = useState<number | null>(null);
 
     const updateStatus = (event: FormEvent) => {
         event.preventDefault();
         statusForm.patch(`/admin/leads/${lead.id}`, { preserveScroll: true });
+    };
+
+    const saveFollowUp = (event: FormEvent) => {
+        event.preventDefault();
+        followUpForm.patch(`/admin/leads/${lead.id}/follow-up`, { preserveScroll: true });
+    };
+
+    const markContacted = () => {
+        contactedForm.post(`/admin/leads/${lead.id}/contacted`, { preserveScroll: true });
     };
 
     const addNote = (event: FormEvent) => {
@@ -72,6 +113,16 @@ export default function LeadShow({ lead, statuses }: { lead: LeadDetail; statuse
             preserveScroll: true,
             onSuccess: () => noteForm.reset('note'),
         });
+    };
+
+    const copyTemplate = async (template: ReplyTemplate) => {
+        try {
+            await navigator.clipboard.writeText(template.body);
+            setCopiedId(template.id);
+            window.setTimeout(() => setCopiedId((current) => (current === template.id ? null : current)), 2000);
+        } catch {
+            setCopiedId(null);
+        }
     };
 
     const whatsappNumber = lead.phone ? lead.phone.replace(/[^\d]/g, '').replace(/^0/, '62') : null;
@@ -308,21 +359,7 @@ export default function LeadShow({ lead, statuses }: { lead: LeadDetail; statuse
                                     ))}
                                 </NativeSelect>
                                 <InputError message={statusForm.errors.status} className="mt-1" />
-                            </div>
-
-                            <div>
-                                <Label htmlFor="next_follow_up_at">Follow-up berikutnya</Label>
-                                <Input
-                                    id="next_follow_up_at"
-                                    type="date"
-                                    value={statusForm.data.next_follow_up_at}
-                                    onChange={(event) => statusForm.setData('next_follow_up_at', event.target.value)}
-                                    className="mt-1.5"
-                                />
-                                <InputError message={statusForm.errors.next_follow_up_at} className="mt-1" />
-                                <p className="field-hint">
-                                    Kosongkan jika belum ada jadwal. Lead tanpa jadwal ditandai setelah 3 hari.
-                                </p>
+                                <p className="field-hint">Status hanya berubah saat Anda memilihnya di sini.</p>
                             </div>
 
                             <Button type="submit" disabled={statusForm.processing} className="w-full rounded-lg">
@@ -330,16 +367,140 @@ export default function LeadShow({ lead, statuses }: { lead: LeadDetail; statuse
                             </Button>
                         </form>
 
-                        <div className="mt-4 space-y-1 border-t border-border pt-3 text-xs text-muted-foreground">
-                            {lead.follow_up_due ? (
-                                <p className="font-medium text-danger">Perlu ditindaklanjuti sekarang.</p>
-                            ) : null}
-                            {lead.last_contacted_at ? (
-                                <p>Terakhir dihubungi: {formatDateTime(lead.last_contacted_at)}</p>
-                            ) : (
-                                <p>Belum pernah ditandai dihubungi.</p>
-                            )}
+                        <div className="mt-4 space-y-3 border-t border-border pt-4">
+                            <div>
+                                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Kontak terakhir</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    {lead.last_contacted_at
+                                        ? `Terakhir dihubungi: ${formatDateTime(lead.last_contacted_at)}`
+                                        : 'Belum pernah ditandai dihubungi.'}
+                                </p>
+                            </div>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={markContacted}
+                                disabled={contactedForm.processing}
+                                className="w-full justify-start rounded-lg"
+                            >
+                                <PhoneCall className="h-4 w-4" aria-hidden="true" />
+                                {contactedForm.processing ? 'Menyimpan…' : 'Tandai sudah dihubungi'}
+                            </Button>
+                            <p className="field-hint">Hanya mencatat waktu. Status lead tidak ikut berubah.</p>
                         </div>
+
+                        <form onSubmit={saveFollowUp} className="mt-4 space-y-3 border-t border-border pt-4">
+                            <div>
+                                <Label htmlFor="follow_up_at">Jadwal follow-up</Label>
+                                <Input
+                                    id="follow_up_at"
+                                    type="date"
+                                    value={followUpForm.data.next_follow_up_at}
+                                    onChange={(event) => followUpForm.setData('next_follow_up_at', event.target.value)}
+                                    className="mt-1.5"
+                                />
+                                <InputError message={followUpForm.errors.next_follow_up_at} className="mt-1" />
+                                <p className="field-hint">Kosongkan jika belum ada jadwal. Lead tanpa jadwal ditandai setelah 3 hari.</p>
+                            </div>
+
+                            <Button type="submit" variant="outline" disabled={followUpForm.processing} className="w-full rounded-lg">
+                                {followUpForm.processing ? 'Menyimpan…' : 'Simpan jadwal'}
+                            </Button>
+
+                            {lead.follow_up_due ? <p className="text-xs font-medium text-danger">Perlu ditindaklanjuti sekarang.</p> : null}
+                        </form>
+                    </Panel>
+
+                    <Panel title="Status email otomatis" description="Hasil pengiriman terakhir per jenis pesan." bodyClassName="p-5">
+                        <ul className="space-y-3">
+                            {[
+                                { key: 'team_notification' as const, label: 'Notifikasi tim' },
+                                { key: 'lead_confirmation' as const, label: 'Konfirmasi ke lead' },
+                            ].map(({ key, label }) => {
+                                const delivery = lead.mail[key];
+
+                                return (
+                                    <li key={key} className="rounded-xl border border-border bg-ice/60 p-3">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="text-sm font-medium text-navy">{label}</span>
+                                            {delivery ? (
+                                                <StatusBadge value={delivery.status} label={delivery.status_label} tone={delivery.tone} />
+                                            ) : (
+                                                <StatusBadge label="Belum dicoba" tone="muted" />
+                                            )}
+                                        </div>
+                                        {delivery ? (
+                                            <>
+                                                <p className="mt-1 break-all text-[0.7rem] text-muted-foreground">
+                                                    {delivery.recipient} · {formatDateTime(delivery.created_at)}
+                                                </p>
+                                                {delivery.error ? (
+                                                    <p className="mt-1 line-clamp-3 text-[0.7rem] leading-relaxed text-danger">{delivery.error}</p>
+                                                ) : null}
+                                            </>
+                                        ) : (
+                                            <p className="mt-1 text-[0.7rem] text-muted-foreground">
+                                                Belum ada percobaan pengiriman tercatat.
+                                            </p>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                        <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+                            Email dikirim setelah respons selesai, jadi lead tetap tersimpan meskipun SMTP gagal.
+                        </p>
+                    </Panel>
+
+                    <Panel
+                        title="Template balasan"
+                        description="Salin, lalu sesuaikan sebelum dikirim."
+                        actions={
+                            <Link href="/admin/lead-templates" className="link-arrow text-xs">
+                                Kelola
+                            </Link>
+                        }
+                        bodyClassName="p-5"
+                    >
+                        {templates.length > 0 ? (
+                            <ul className="space-y-3">
+                                {templates.map((template) => (
+                                    <li key={template.id} className="rounded-xl border border-border p-3">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <p className="text-sm font-semibold text-navy">{template.title}</p>
+                                            <button
+                                                type="button"
+                                                onClick={() => copyTemplate(template)}
+                                                className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-50"
+                                            >
+                                                {copiedId === template.id ? (
+                                                    <>
+                                                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                                                        Tersalin
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                                                        Salin
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                        <p className="mt-1.5 line-clamp-4 whitespace-pre-line text-xs leading-relaxed text-muted-foreground">
+                                            {template.body}
+                                        </p>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-xs text-muted-foreground">
+                                Belum ada template aktif.{' '}
+                                <Link href="/admin/lead-templates" className="font-semibold text-brand-700 hover:underline">
+                                    Buat template
+                                </Link>
+                                .
+                            </p>
+                        )}
                     </Panel>
 
                     <Panel title="Kontak cepat" bodyClassName="p-5">

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DesignBriefController;
 use App\Http\Controllers\Admin\FaqController;
 use App\Http\Controllers\Admin\LeadController;
+use App\Http\Controllers\Admin\LeadTemplateController;
 use App\Http\Controllers\Admin\MediaController;
 use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\PageController;
@@ -59,10 +60,15 @@ Route::middleware(['auth', 'active'])
         Route::middleware('can:manage-leads')->group(function () {
             Route::get('/leads', [LeadController::class, 'index'])->name('leads.index');
             Route::get('/leads/export', [LeadController::class, 'export'])->name('leads.export');
+            Route::patch('/leads/bulk', [LeadController::class, 'bulk'])->name('leads.bulk');
             Route::get('/leads/{lead}', [LeadController::class, 'show'])->name('leads.show');
             Route::get('/leads/{lead}/attachments/{attachment}', [LeadController::class, 'downloadAttachment'])->name('leads.attachments.download');
             Route::patch('/leads/{lead}', [LeadController::class, 'update'])->name('leads.update');
+            Route::post('/leads/{lead}/contacted', [LeadController::class, 'markContacted'])->name('leads.contacted');
+            Route::patch('/leads/{lead}/follow-up', [LeadController::class, 'updateFollowUp'])->name('leads.follow-up');
             Route::post('/leads/{lead}/notes', [LeadController::class, 'storeNote'])->name('leads.notes.store');
+
+            Route::resource('lead-templates', LeadTemplateController::class)->only(['index', 'store', 'update', 'destroy'])->parameters(['lead-templates' => 'template']);
 
             Route::get('/design-briefs', [DesignBriefController::class, 'index'])->name('design-briefs.index');
         });
@@ -74,6 +80,9 @@ Route::middleware(['auth', 'active'])
         Route::middleware('can:manage-settings')->group(function () {
             Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit');
             Route::put('/settings', [SettingController::class, 'update'])->name('settings.update');
+            Route::post('/settings/test-email', [SettingController::class, 'sendTestEmail'])
+                ->middleware('throttle:5,1')
+                ->name('settings.test-email');
         });
 
         Route::middleware('can:manage-users')->group(function () {

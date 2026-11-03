@@ -7,6 +7,7 @@ use App\Enums\LeadStatus;
 use App\Http\Controllers\Controller;
 use App\Models\AnalyticsEvent;
 use App\Models\Lead;
+use App\Models\MailDelivery;
 use App\Models\Package;
 use App\Models\PortfolioProject;
 use App\Models\Service;
@@ -98,6 +99,26 @@ class DashboardController extends Controller
             ])
             ->all();
 
+        $recentMailFailures = MailDelivery::query()
+            ->with('lead:id,name')
+            ->where('status', MailDelivery::STATUS_FAILED)
+            ->where('created_at', '>=', now()->subDays(7))
+            ->latest()
+            ->limit(5)
+            ->get()
+            ->map(fn (MailDelivery $delivery) => [
+                'id' => $delivery->id,
+                'type_label' => $delivery->typeLabel(),
+                'recipient' => $delivery->recipient,
+                'error' => $delivery->error,
+                'created_at' => $delivery->created_at?->toIso8601String(),
+                'lead' => $delivery->lead ? [
+                    'id' => $delivery->lead->id,
+                    'name' => $delivery->lead->name,
+                ] : null,
+            ])
+            ->all();
+
         return Inertia::render('admin/dashboard', [
             'stats' => [
                 'leads_total' => Lead::query()->count(),
@@ -122,6 +143,11 @@ class DashboardController extends Controller
             'conversion' => $conversion,
             'notifications' => [
                 'mail_configured' => filled(Settings::get('smtp_host')) || config('mail.default') !== 'log',
+                'mail_failed_7_days' => MailDelivery::query()
+                    ->where('status', MailDelivery::STATUS_FAILED)
+                    ->where('created_at', '>=', now()->subDays(7))
+                    ->count(),
+                'recent_mail_failures' => $recentMailFailures,
             ],
             'analytics' => [
                 'tracking_since' => AnalyticsEvent::query()->min('created_at'),

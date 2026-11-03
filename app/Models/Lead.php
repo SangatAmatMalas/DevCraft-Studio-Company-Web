@@ -76,6 +76,12 @@ class Lead extends Model
         return $this->hasMany(LeadAttachment::class)->latest();
     }
 
+    /** @return HasMany<MailDelivery, $this> */
+    public function mailDeliveries(): HasMany
+    {
+        return $this->hasMany(MailDelivery::class)->latest();
+    }
+
     /** @param Builder<Lead> $query */
     public function scopeStatus(Builder $query, string $status): void
     {

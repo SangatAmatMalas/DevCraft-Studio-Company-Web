@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             PackageSeeder::class,
             PortfolioSeeder::class,
             FaqSeeder::class,
+            LeadReplyTemplateSeeder::class,
             PageSeeder::class,
         ]);
     }
