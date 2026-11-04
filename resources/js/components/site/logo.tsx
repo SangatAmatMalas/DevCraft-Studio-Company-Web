@@ -21,7 +21,7 @@ export default function Logo({
                 width={36}
                 height={36}
                 aria-hidden="true"
-                className={cn('h-9 w-9 rounded-xl object-cover shadow-sm', tone === 'dark' && 'ring-1 ring-white/15')}
+                className={cn('h-9 w-9 object-contain', tone === 'dark' && 'brightness-0 invert')}
             />
             <span className={cn('font-display text-base font-bold tracking-tight', tone === 'dark' ? 'text-white' : 'text-navy')}>
                 {name}
