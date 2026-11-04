@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { CheckCircle2, Pencil, Plus } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ExternalLink, Pencil, Plus } from 'lucide-react';
 
 import AdminLayout from '@/components/admin/admin-layout';
 import ConfirmDelete from '@/components/admin/confirm-delete';
@@ -23,20 +23,46 @@ interface MemberRow {
 }
 
 export default function TeamIndex({ members }: { members: MemberRow[] }) {
+    const drafts = members.filter((member) => !member.published);
+    const draftCount = drafts.length;
+    const firstDraftHref = drafts.length > 0 ? `/admin/team/${drafts[0].id}/edit` : '/admin/team/create';
+
     return (
         <AdminLayout
             title="Tim"
-            description="Profil hanya tampil setelah anggota menyetujui publikasi. Kosongkan bagian ini jika belum ada persetujuan."
+            description="Profil hanya tampil setelah anggota menyetujui publikasi. Anggota yang belum disetujui tetap tersimpan sebagai draft."
             actions={
-                <Button asChild className="rounded-xl">
-                    <Link href="/admin/team/create">
-                        <Plus className="h-4 w-4" aria-hidden="true" />
-                        Anggota baru
-                    </Link>
-                </Button>
+                <>
+                    <Button asChild variant="outline" className="rounded-xl">
+                        <a href="/tim" target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                            Lihat /tim
+                        </a>
+                    </Button>
+                    <Button asChild className="rounded-xl">
+                        <Link href="/admin/team/create">
+                            <Plus className="h-4 w-4" aria-hidden="true" />
+                            Anggota baru
+                        </Link>
+                    </Button>
+                </>
             }
             breadcrumbs={[{ label: 'Tim' }]}
         >
+            {draftCount > 0 ? (
+                <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-900">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                    <p>
+                        {draftCount} anggota belum tampil di halaman <span className="font-semibold">/tim</span> karena belum aktif atau
+                        persetujuan publikasinya belum dicatat.{' '}
+                        <Link href={firstDraftHref} className="font-semibold underline underline-offset-4">
+                            Lengkapi profil
+                        </Link>
+                        .
+                    </p>
+                </div>
+            ) : null}
+
             <Panel bodyClassName="p-0">
                 {members.length > 0 ? (
                     <ul className="divide-y divide-border">
@@ -98,7 +124,7 @@ export default function TeamIndex({ members }: { members: MemberRow[] }) {
                     <div className="px-6 py-14 text-center">
                         <h3 className="font-display text-base font-semibold text-navy">Belum ada anggota tim</h3>
                         <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted-foreground">
-                            Bagian tim pada halaman tentang kami akan disembunyikan sampai ada profil yang disetujui.
+                            Halaman /tim akan menampilkan empty state sampai ada profil yang disetujui dan diaktifkan.
                         </p>
                         <Button asChild className="mt-5 rounded-xl">
                             <Link href="/admin/team/create">Tambah anggota</Link>

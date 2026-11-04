@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { cn } from '@/lib/utils';
 import type { ProjectCard } from '@/types';
 
@@ -23,12 +25,16 @@ export default function ProjectVisual({
     className?: string;
     size?: 'card' | 'hero';
 }) {
-    if (project.cover_url) {
+    const [failed, setFailed] = useState(false);
+
+    if (project.cover_url && !failed) {
         return (
             <img
                 src={project.cover_url}
                 alt={`Visual proyek ${project.title}`}
                 loading="lazy"
+                decoding="async"
+                onError={() => setFailed(true)}
                 className={cn('h-full w-full object-cover', className)}
             />
         );

@@ -1,5 +1,5 @@
 import { usePage } from '@inertiajs/react';
-import { CheckCircle2, X, XCircle } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, X, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import type { SharedProps } from '@/types';
@@ -8,8 +8,9 @@ export default function FlashToast() {
     const { flash } = usePage<SharedProps>().props;
     const [visible, setVisible] = useState(false);
 
-    const message = flash.error ?? flash.success;
+    const message = flash.error ?? flash.warning ?? flash.success;
     const isError = Boolean(flash.error);
+    const isWarning = !isError && Boolean(flash.warning);
 
     useEffect(() => {
         if (!message) {
@@ -20,7 +21,7 @@ export default function FlashToast() {
         const timeout = window.setTimeout(() => setVisible(false), 7000);
 
         return () => window.clearTimeout(timeout);
-    }, [message, flash.error, flash.success]);
+    }, [message, flash.error, flash.warning, flash.success]);
 
     if (!message || !visible) {
         return null;
@@ -35,6 +36,8 @@ export default function FlashToast() {
             <div className="flex items-start gap-3">
                 {isError ? (
                     <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-danger" aria-hidden="true" />
+                ) : isWarning ? (
+                    <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" aria-hidden="true" />
                 ) : (
                     <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden="true" />
                 )}

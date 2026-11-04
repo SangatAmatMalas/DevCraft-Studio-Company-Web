@@ -18,6 +18,7 @@ const NAV = [
 
 const SECONDARY_NAV = [
     { label: 'Tentang Kami', href: '/tentang-kami' },
+    { label: 'Tim', href: '/tim' },
     { label: 'Kebijakan Privasi', href: '/kebijakan-privasi' },
 ];
 
@@ -50,6 +51,16 @@ export default function SiteHeader() {
                 </nav>
 
                 <div className="hidden items-center gap-2 md:flex">
+                    <Link
+                        href="/tim"
+                        aria-current={isActive('/tim') ? 'page' : undefined}
+                        className={cn(
+                            'hidden rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-brand-50 hover:text-brand-700 lg:inline-flex',
+                            isActive('/tim') && 'bg-brand-50 text-brand-700',
+                        )}
+                    >
+                        Tim
+                    </Link>
                     {whatsapp.configured && whatsapp.url ? (
                         <a
                             href={whatsapp.url}

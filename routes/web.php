@@ -10,6 +10,7 @@ use App\Http\Controllers\Site\PageController;
 use App\Http\Controllers\Site\PortfolioController;
 use App\Http\Controllers\Site\ServiceController;
 use App\Http\Controllers\Site\SitemapController;
+use App\Http\Controllers\Site\TeamController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -25,6 +26,7 @@ Route::get('/portfolio', [PortfolioController::class, 'index'])->name('portfolio
 Route::get('/portfolio/{project}', [PortfolioController::class, 'show'])->name('portfolio.show');
 
 Route::get('/tentang-kami', [AboutController::class, 'index'])->name('tentang');
+Route::get('/tim', [TeamController::class, 'index'])->name('tim');
 Route::get('/kebijakan-privasi', [PageController::class, 'show'])->defaults('slug', 'kebijakan-privasi')->name('privasi');
 
 Route::get('/kontak', [ContactController::class, 'show'])->name('kontak');

@@ -103,4 +103,43 @@ test.describe.serial('critical user flows', () => {
         const frame = page.frameLocator('iframe').first();
         await expect(frame.getByRole('heading', { name: 'Tagline dari alur edit' })).toBeVisible();
     });
+
+    test('team members stay hidden until approved, then appear on /tim', async ({ page }) => {
+        await login(page);
+
+        await page.goto('/admin/team/create');
+        await page.locator('#name').fill('E2E Anggota');
+        await page.locator('#role').fill('QA Engineer');
+        await page.locator('#bio').fill('Menguji alur rilis dan menulis skenario pengujian.');
+        await page.locator('#experience-role-0').fill('QA Lead');
+        await page.locator('#experience-organization-0').fill('PT Contoh');
+        await page.locator('#experience-period-0').fill('2024 — sekarang');
+        await page.getByRole('button', { name: 'Simpan' }).click();
+
+        await expect(page.getByText(/disimpan sebagai draft — belum tampil di \/tim/)).toBeVisible();
+        await expect(page.getByText(/anggota belum tampil di halaman/)).toBeVisible();
+
+        await page.goto('/tim');
+        await expect(page.getByRole('heading', { level: 1, name: 'Orang di balik DevCraft Studio' })).toBeVisible();
+        await expect(page.getByText('Belum ada profil yang bisa ditampilkan')).toBeVisible();
+
+        await page.goto('/admin/team');
+        await page.getByRole('link', { name: 'Edit' }).first().click();
+        await page.getByLabel(/menyetujui publikasi profil/).click();
+        await page.getByLabel(/Aktif dan tampil di halaman publik/).click();
+        await page.getByRole('button', { name: 'Simpan' }).click();
+
+        await expect(page.getByText(/sudah tampil di \/tim/)).toBeVisible();
+
+        await page.goto('/tim');
+        await expect(page.getByText('E2E Anggota')).toBeVisible();
+        await expect(page.getByText('QA Engineer')).toBeVisible();
+        await expect(page.getByText('QA Lead')).toBeVisible();
+        await expect(page.getByText('PT Contoh')).toBeVisible();
+        await expect(page.getByText('2024 — sekarang')).toBeVisible();
+
+        await page.goto('/tentang-kami');
+        await page.getByRole('link', { name: /Lihat semua tim/ }).click();
+        await expect(page).toHaveURL(/\/tim$/);
+    });
 });

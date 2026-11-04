@@ -59,6 +59,7 @@ export interface SharedProps {
     auth: { user: AuthUser | null };
     flash: {
         success: string | null;
+        warning: string | null;
         error: string | null;
         lead_submitted: boolean;
     };
@@ -290,6 +291,13 @@ export interface TestimonialItem {
     photo_url: string | null;
 }
 
+export interface TeamExperienceItem extends FormObject {
+    role: string;
+    organization: string;
+    period: string;
+    summary: string;
+}
+
 export interface TeamMemberItem {
     id: number;
     name: string;
@@ -297,6 +305,7 @@ export interface TeamMemberItem {
     bio: string | null;
     photo_url: string | null;
     skills: string[];
+    experience: TeamExperienceItem[];
     github_url: string | null;
     linkedin_url: string | null;
 }

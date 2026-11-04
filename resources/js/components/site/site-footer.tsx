@@ -80,6 +80,11 @@ export default function SiteFooter() {
                             </Link>
                         </li>
                         <li>
+                            <Link href="/tim" className="transition-colors hover:text-white">
+                                Tim
+                            </Link>
+                        </li>
+                        <li>
                             <Link href="/kontak" className="transition-colors hover:text-white">
                                 Kontak
                             </Link>

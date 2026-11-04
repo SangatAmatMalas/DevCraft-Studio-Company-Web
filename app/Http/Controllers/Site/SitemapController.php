@@ -7,6 +7,7 @@ use App\Models\Package;
 use App\Models\Page;
 use App\Models\PortfolioProject;
 use App\Models\Service;
+use App\Models\TeamMember;
 use Illuminate\Http\Response;
 
 class SitemapController extends Controller
@@ -23,6 +24,14 @@ class SitemapController extends Controller
             ['loc' => url('/kontak'), 'changefreq' => 'yearly', 'priority' => '0.6'],
             ['loc' => url('/desain'), 'changefreq' => 'monthly', 'priority' => '0.8'],
         ]);
+
+        if (TeamMember::query()->approved()->exists()) {
+            $urls->push([
+                'loc' => url('/tim'),
+                'changefreq' => 'monthly',
+                'priority' => '0.6',
+            ]);
+        }
 
         Service::query()->published()->get(['slug', 'updated_at'])->each(function (Service $service) use ($urls) {
             $urls->push([

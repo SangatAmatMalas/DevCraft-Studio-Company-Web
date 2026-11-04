@@ -104,9 +104,10 @@ php artisan inertia:start-ssr         # jalankan server SSR (port 13714)
 PRD melarang konten fiktif. Implementasi yang menegakkan aturan ini:
 
 - **Harga:** paket tidak bisa dipublikasikan tanpa `price_amount > 0`, `price_label` yang valid, atau `billing_type = custom`. Placeholder seperti `Rp X` ditolak validator (`App\Rules\NoPlaceholder`).
+- **Paket & layanan hasil seeder:** `PackageSeeder` mengisi 6 paket aktif — Landing Page Starter Rp 1.500.000, Company Profile Bisnis Rp 3.500.000, Katalog Produk Rp 5.500.000, Aplikasi Web Custom mulai Rp 12.000.000, Otomasi & Integrasi Rp 2.500.000, dan Maintenance Bulanan Rp 450.000/bulan — beserta add-on dan meta SEO. `ServiceSeeder` mengisi 7 layanan aktif dengan deskripsi, deliverables, proses, FAQ, dan meta SEO. Harga awal diposisikan terhadap rentang pasar Fastwork 2026 (landing page Rp 1–3 jt, company profile Rp 3–7 jt, katalog/toko online Rp 5–15 jt, aplikasi custom Rp 6–20 jt+, otomasi Rp 0,35–7,5 jt, maintenance Rp 0,25–1,5 jt per bulan). Angka tersebut adalah keputusan harga DevCraft, bukan klaim harga pasar, dan bukan harga final untuk semua kebutuhan. Pembanding yang dibaca November 2026: [blog harga website Fastwork](https://blog.fastwork.id/harga-pembuatan-website/), [landing page](https://fastwork.id/web-design/landing-page), [company profile](https://fastwork.id/web-development/company-profile), [ecommerce](https://fastwork.id/web-development/ecommerce), [maintenance](https://fastwork.id/technical-support/website-maintenance), [QA](https://fastwork.id/quality-assurance), dan [AI automation](https://fastwork.id/ai-automation).
 - **Portfolio:** seeder menyimpan proyek sebagai `draft`. Publikasikan hanya setelah detail proyek terverifikasi.
 - **Testimoni:** hanya tampil jika `is_active` **dan** `permission_confirmed_at` terisi.
-- **Tim:** hanya tampil jika `is_active` **dan** `approved_at` (persetujuan anggota) terisi.
+- **Tim:** hanya tampil jika `is_active` **dan** `approved_at` (persetujuan anggota) terisi. Halaman publiknya ada di `/tim`; halaman Tentang Kami hanya menampilkan maksimal tiga profil sebagai pratinjau. `approved_at` tidak pernah diisi otomatis oleh sistem — centang persetujuan hanya setelah anggota benar-benar setuju. Persetujuan itu mencakup pengalaman kerja yang diisi di form (maksimal 8 entri). Menyimpan profil sebagai draft memunculkan peringatan di admin dan hitungan draft di daftar tim.
 - **Kontak:** email/WhatsApp/alamat kosong akan disembunyikan atau memakai fallback aman; tidak ada nomor karangan.
 - **Analytics:** event yang dikirim ke `/analytics/event` dibatasi whitelist 11 event dan tidak boleh memuat PII.
 - **SEO:** halaman draft tidak masuk sitemap dan tidak dapat diakses publik. Halaman error memakai `noindex`.
@@ -136,8 +137,8 @@ app/
   Http/Controllers/Site/     # halaman publik
   Http/Requests/             # validasi
   Models/                    # 20 model Eloquent
-  Services/                  # Seo, ImageUploader, LeadNotifier, dll.
-  Support/                   # Settings, PlaceholderGuard, WhatsAppLink
+  Services/                  # Seo, ImageUploader, LeadNotifier, WhatsAppLink, dll.
+  Support/                   # Settings, PlaceholderGuard, TeamPresenter
 resources/js/
   pages/site/                # halaman publik
   pages/admin/               # halaman CMS
@@ -491,6 +492,7 @@ Pilihan yang aman:
 3. Pastikan `https://domain/sitemap.xml` dan `robots.txt` benar.
 4. Jalankan `php artisan app:verify-placeholders` sekali lagi.
 5. Cek `/up` (health check Laravel) mengembalikan 200.
+6. Pastikan `php artisan storage:link` sudah dijalankan dan `APP_URL` sama dengan URL yang dibuka di browser. Gambar diunggah sebagai URL absolut (`APP_URL/storage/...`), jadi host yang berbeda membuat foto tim dan cover portfolio gagal dimuat.
 
 ---
 
@@ -572,7 +574,7 @@ npm run build:ssr
 npm run test:e2e     # Playwright: build + disposable SQLite + server
 ```
 
-Cakupan tes saat ini: autentikasi & akun nonaktif, matriks peran/Gate, CRUD layanan/portfolio (termasuk baris repeater kosong), aturan harga paket + placeholder, visibilitas draft/testimoni/tim, formulir lead (validasi, honeypot, rate limit, catatan, ekspor CSV), generator preview desain (tiga varian, noindex, pemilihan, atribusi lead, baris layanan kosong, normalisasi kontak, edit brief, dan penguncian brief yang sudah diklaim), halaman publik, sitemap, halaman error, dan perintah `app:verify-placeholders`. E2E Playwright mencakup perbandingan paket, admin membuat & memublikasikan proyek, visitor mengirim brief lalu admin menindaklanjutinya, serta alur lengkap generator desain: membuat preview dengan satu baris layanan, mengubah brief, dan memastikan preview ikut berubah.
+Cakupan tes saat ini: autentikasi & akun nonaktif, matriks peran/Gate, CRUD layanan/portfolio (termasuk baris repeater kosong), aturan harga paket + placeholder, isi seeder paket/layanan (harga awal, add-on, meta SEO, idempotensi), visibilitas draft/testimoni/tim (termasuk `/tim` hanya menampilkan profil yang disetujui, urutan `display_order`, empty state `noindex`, entri sitemap kondisional, penyimpanan pengalaman kerja, dan pratinjau maksimal tiga orang di Tentang Kami), formulir lead (validasi, honeypot, rate limit, catatan, ekspor CSV), generator preview desain (tiga varian, noindex, pemilihan, atribusi lead, baris layanan kosong, normalisasi kontak, edit brief, dan penguncian brief yang sudah diklaim), halaman publik, sitemap, halaman error, dan perintah `app:verify-placeholders`. E2E Playwright mencakup perbandingan paket, admin membuat & memublikasikan proyek, visitor mengirim brief lalu admin menindaklanjutinya, serta alur lengkap generator desain: membuat preview dengan satu baris layanan, mengubah brief, dan memastikan preview ikut berubah.
 
 Checklist manual sebelum go-live:
 

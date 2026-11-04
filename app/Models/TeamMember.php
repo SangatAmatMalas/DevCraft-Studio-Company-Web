@@ -14,6 +14,7 @@ class TeamMember extends Model
         'bio',
         'photo_path',
         'skills',
+        'work_experience',
         'github_url',
         'linkedin_url',
         'display_order',
@@ -25,6 +26,7 @@ class TeamMember extends Model
     {
         return [
             'skills' => 'array',
+            'work_experience' => 'array',
             'is_active' => 'boolean',
             'display_order' => 'integer',
             'approved_at' => 'datetime',

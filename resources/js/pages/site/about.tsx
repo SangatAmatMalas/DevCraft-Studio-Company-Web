@@ -84,11 +84,21 @@ export default function About({ page, team, seo }: AboutProps) {
                     eyebrow="Tim"
                     title="Orang di balik pekerjaan"
                     description="Profil hanya ditampilkan setelah anggota menyetujui publikasi nama, peran, dan tautan profesionalnya."
+                    action={
+                        team.length > 0 ? (
+                            <Button asChild variant="outline" className="rounded-xl">
+                                <Link href="/tim">
+                                    Lihat semua tim
+                                    <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                                </Link>
+                            </Button>
+                        ) : null
+                    }
                 />
 
                 {team.length > 0 ? (
                     <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-                        {team.map((member) => (
+                        {team.slice(0, 3).map((member) => (
                             <article key={member.id} className="rounded-2xl border border-border bg-white p-6 shadow-soft">
                                 <div className="flex items-center gap-4">
                                     {member.photo_url ? (
