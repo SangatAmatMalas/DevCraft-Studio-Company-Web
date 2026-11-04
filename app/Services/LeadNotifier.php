@@ -78,32 +78,12 @@ class LeadNotifier
     }
 
     /**
-     * SMTP credentials live in the admin settings, not only in .env.
+     * Backwards-compatible alias; the mailer configuration now lives in a
+     * dedicated service shared with user invitations.
      */
     public static function configureMailer(): void
     {
-        $host = Settings::get('smtp_host');
-
-        if (blank($host)) {
-            return;
-        }
-
-        config([
-            'mail.default' => 'smtp',
-            'mail.mailers.smtp.host' => $host,
-            'mail.mailers.smtp.port' => Settings::get('smtp_port') ?: 587,
-            'mail.mailers.smtp.username' => Settings::get('smtp_username'),
-            'mail.mailers.smtp.password' => Settings::get('smtp_password'),
-            'mail.mailers.smtp.encryption' => Settings::get('smtp_encryption') ?: null,
-        ]);
-
-        if ($from = Settings::get('mail_from_address')) {
-            config(['mail.from.address' => $from]);
-        }
-
-        if ($name = Settings::get('mail_from_name')) {
-            config(['mail.from.name' => $name]);
-        }
+        MailConfigurator::configure();
     }
 
     /**

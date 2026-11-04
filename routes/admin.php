@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\TeamMemberController;
 use App\Http\Controllers\Admin\TechnologyController;
 use App\Http\Controllers\Admin\TestimonialController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\UserInvitationController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'active'])
@@ -69,7 +70,11 @@ Route::middleware(['auth', 'active'])
             Route::post('/leads/{lead}/notes', [LeadController::class, 'storeNote'])->name('leads.notes.store');
 
             Route::resource('lead-templates', LeadTemplateController::class)->only(['index', 'store', 'update', 'destroy'])->parameters(['lead-templates' => 'template']);
+        });
 
+        // Read-only brief list shared with the worker role, which must never
+        // see lead contact data.
+        Route::middleware('can:view-design-briefs')->group(function () {
             Route::get('/design-briefs', [DesignBriefController::class, 'index'])->name('design-briefs.index');
         });
 
@@ -86,6 +91,11 @@ Route::middleware(['auth', 'active'])
         });
 
         Route::middleware('can:manage-users')->group(function () {
+            Route::get('/users/invite', [UserInvitationController::class, 'create'])->name('users.invite');
+            Route::post('/users/invitations', [UserInvitationController::class, 'store'])->name('users.invitations.store');
+            Route::post('/users/invitations/{invitation}/resend', [UserInvitationController::class, 'resend'])->name('users.invitations.resend');
+            Route::delete('/users/invitations/{invitation}', [UserInvitationController::class, 'destroy'])->name('users.invitations.destroy');
+
             Route::resource('users', UserController::class)->except(['show']);
         });
     });

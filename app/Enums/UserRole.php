@@ -8,6 +8,7 @@ enum UserRole: string
     case Admin = 'admin';
     case ContentManager = 'content_manager';
     case Sales = 'sales';
+    case Worker = 'worker';
 
     public function label(): string
     {
@@ -16,6 +17,7 @@ enum UserRole: string
             self::Admin => 'Admin',
             self::ContentManager => 'Content Manager',
             self::Sales => 'Sales',
+            self::Worker => 'Pekerja / Produksi',
         };
     }
 
@@ -32,6 +34,27 @@ enum UserRole: string
     public function canManageSettings(): bool
     {
         return in_array($this, [self::SuperAdmin, self::Admin], true);
+    }
+
+    /**
+     * Roles allowed to open the read-only design brief list. Workers only get
+     * this area so they never see lead contact data.
+     */
+    public function canViewDesignBriefs(): bool
+    {
+        return in_array($this, [
+            self::SuperAdmin,
+            self::Admin,
+            self::ContentManager,
+            self::Sales,
+            self::Worker,
+        ], true);
+    }
+
+    /** Whether the role may only read design briefs and nothing else. */
+    public function isReadOnlyWorker(): bool
+    {
+        return $this === self::Worker;
     }
 
     /** @return array<string, string> */

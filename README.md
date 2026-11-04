@@ -80,6 +80,26 @@ ADMIN_EMAIL=owner@domain.com ADMIN_PASSWORD='kata-sandi-kuat' php artisan db:see
 
 > Ganti kata sandi default sebelum deploy. Tidak ada pendaftaran mandiri; akun dibuat dari menu **Pengguna** (khusus Super Admin).
 
+### Mengundang akun tim
+
+Super Admin membuka **Pengguna → Undang pengguna**, mengisi nama, email, dan peran. Sistem mengirim tautan pembuatan kata sandi yang berlaku **7 hari dan hanya sekali pakai**. Penerima membuat kata sandinya sendiri; tidak ada kata sandi yang dikirim lewat email atau chat.
+
+- Jika SMTP belum siap, halaman Pengguna menampilkan tautan sekali-tampil untuk disalin manual.
+- Undangan yang belum diterima dapat **dikirim ulang** (tautan lama otomatis batal) atau **dibatalkan**.
+- Token disimpan sebagai hash SHA-256, sehingga tautan tidak bisa dipulihkan dari database.
+
+### Peran dan akses
+
+| Peran | Konten | Leads | Preview desain | Pengaturan | Pengguna |
+| --- | --- | --- | --- | --- | --- |
+| Super Admin | Ya | Ya | Ya | Ya | Ya |
+| Admin | Ya | Ya | Ya | Ya | Tidak |
+| Content Manager | Ya | Tidak | Ya | Tidak | Tidak |
+| Sales | Tidak | Ya | Ya | Tidak | Tidak |
+| Pekerja / Produksi | Tidak | Tidak | Ya (baca saja) | Tidak | Tidak |
+
+Peran **Pekerja / Produksi** ditujukan untuk staf yang hanya perlu melihat daftar preview desain. Peran ini tidak dapat membuka data lead, lampiran lead, konten, media, pengaturan, log aktivitas, atau pengguna, dan langsung diarahkan ke `/admin/design-briefs` setelah masuk.
+
 ---
 
 ## 3. Perintah penting

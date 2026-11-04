@@ -1,4 +1,4 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { ExternalLink, Search, Sparkles } from 'lucide-react';
 import { FormEvent, useState } from 'react';
 
@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NativeSelect } from '@/components/ui/native-select';
 import { formatDateTime } from '@/lib/format';
+import { canManageLeads } from '@/lib/permissions';
+import type { SharedProps } from '@/types';
 
 interface BriefRow {
     id: number;
@@ -40,6 +42,8 @@ const statusLabel: Record<string, string> = {
 };
 
 export default function DesignBriefsIndex({ briefs, filters, categories }: Props) {
+    const { auth } = usePage<SharedProps>().props;
+    const canOpenLeads = canManageLeads(auth.user?.role);
     const [query, setQuery] = useState(filters.q);
     const [category, setCategory] = useState(filters.category);
 
@@ -123,7 +127,7 @@ export default function DesignBriefsIndex({ briefs, filters, categories }: Props
                                             >
                                                 {statusLabel[brief.status] ?? brief.status}
                                             </Badge>
-                                            {brief.lead_id ? (
+                                            {brief.lead_id && canOpenLeads ? (
                                                 <Link href={`/admin/leads/${brief.lead_id}`} className="mt-1.5 block text-xs font-medium text-brand-700 hover:underline">
                                                     Lihat lead #{brief.lead_id}
                                                 </Link>

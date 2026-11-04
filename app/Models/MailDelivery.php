@@ -13,6 +13,8 @@ class MailDelivery extends Model
 
     public const TYPE_TEST = 'test';
 
+    public const TYPE_USER_INVITATION = 'user_invitation';
+
     public const STATUS_SENT = 'sent';
 
     public const STATUS_FAILED = 'failed';
@@ -47,6 +49,7 @@ class MailDelivery extends Model
             self::TYPE_TEAM_NOTIFICATION => 'Notifikasi tim',
             self::TYPE_LEAD_CONFIRMATION => 'Konfirmasi ke lead',
             self::TYPE_TEST => 'Email uji',
+            self::TYPE_USER_INVITATION => 'Undangan akun',
             default => $this->type,
         };
     }

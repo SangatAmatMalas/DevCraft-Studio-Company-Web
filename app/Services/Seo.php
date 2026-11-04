@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Package;
 use App\Models\Page;
 use App\Support\Settings;
 use Illuminate\Support\Facades\Storage;
@@ -144,7 +145,7 @@ class Seo
      *
      * @return array<string, mixed>
      */
-    public static function packageOffer(\App\Models\Package $package): array
+    public static function packageOffer(Package $package): array
     {
         $offer = [
             '@type' => 'Offer',

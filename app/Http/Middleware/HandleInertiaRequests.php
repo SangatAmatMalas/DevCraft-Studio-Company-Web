@@ -50,6 +50,7 @@ class HandleInertiaRequests extends Middleware
                 'warning' => fn () => $request->session()->get('warning'),
                 'error' => fn () => $request->session()->get('error'),
                 'lead_submitted' => fn () => (bool) $request->session()->get('lead_submitted', false),
+                'invitation_url' => fn () => $request->session()->get('invitation_url'),
             ],
             'analytics' => [
                 'provider' => Settings::get('analytics_provider') ?: 'internal',

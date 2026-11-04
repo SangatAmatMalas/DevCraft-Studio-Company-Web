@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\InvitationAcceptanceController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use Illuminate\Support\Facades\Route;
@@ -14,6 +15,12 @@ Route::middleware('guest')->group(function () {
 
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
     Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+
+    // Account invitations are single-use links tied to a hashed token.
+    Route::get('undangan/{token}', [InvitationAcceptanceController::class, 'show'])->name('invitation.accept');
+    Route::post('undangan/{token}', [InvitationAcceptanceController::class, 'store'])
+        ->middleware('throttle:6,1')
+        ->name('invitation.store');
 });
 
 Route::middleware('auth')->group(function () {

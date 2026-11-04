@@ -62,6 +62,7 @@ export interface SharedProps {
         warning: string | null;
         error: string | null;
         lead_submitted: boolean;
+        invitation_url: string | null;
     };
     analytics: { provider: string; measurement_id: string | null };
     [key: string]: unknown;

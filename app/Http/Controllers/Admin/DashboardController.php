@@ -12,14 +12,21 @@ use App\Models\Package;
 use App\Models\PortfolioProject;
 use App\Models\Service;
 use App\Support\Settings;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(): Response
+    public function index(): Response|RedirectResponse
     {
+        // The worker role only has read access to design briefs; the dashboard
+        // would expose lead names and funnel data.
+        if (request()->user()?->role->isReadOnlyWorker()) {
+            return redirect()->route('admin.design-briefs.index');
+        }
+
         $since30 = now()->subDays(30);
 
         $leadsByStatus = Lead::query()

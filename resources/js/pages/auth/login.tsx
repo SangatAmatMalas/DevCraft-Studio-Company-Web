@@ -105,7 +105,8 @@ export default function Login({
             </form>
 
             <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
-                Tidak ada pendaftaran mandiri. Akun baru hanya dapat dibuat oleh Super Admin melalui menu Pengguna.
+                Tidak ada pendaftaran mandiri. Akun baru dibuat melalui undangan email atau ditambahkan langsung oleh Super Admin
+                di menu Pengguna.
             </p>
         </AuthShell>
     );

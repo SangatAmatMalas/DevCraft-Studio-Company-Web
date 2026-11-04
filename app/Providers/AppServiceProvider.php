@@ -28,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage-leads', fn (User $user) => $user->isActive() && $user->role->canManageLeads());
         Gate::define('manage-settings', fn (User $user) => $user->isActive() && $user->role->canManageSettings());
         Gate::define('manage-users', fn (User $user) => $user->isActive() && $user->role === UserRole::SuperAdmin);
+        Gate::define('view-design-briefs', fn (User $user) => $user->isActive() && $user->role->canViewDesignBriefs());
 
         RateLimiter::for('lead-submissions', function (Request $request) {
             return [

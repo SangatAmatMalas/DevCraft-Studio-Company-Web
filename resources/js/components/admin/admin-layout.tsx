@@ -36,7 +36,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { canManageContent, canManageLeads, canManageSettings, canManageUsers } from '@/lib/permissions';
+import { canManageContent, canManageLeads, canManageSettings, canManageUsers, canViewDesignBriefs, isReadOnlyWorker } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 import type { SharedProps } from '@/types';
 
@@ -64,7 +64,7 @@ const NAV: NavGroup[] = [
                 href: '/admin',
                 icon: LayoutDashboard,
                 match: (url) => url === '/admin' || url === '/admin/dashboard' || url.startsWith('/admin/dashboard?'),
-                visible: () => true,
+                visible: (role) => !isReadOnlyWorker(role),
             },
             {
                 label: 'Leads',
@@ -74,18 +74,23 @@ const NAV: NavGroup[] = [
                 visible: canManageLeads,
             },
             {
-                label: 'Preview desain',
-                href: '/admin/design-briefs',
-                icon: Sparkles,
-                match: startsWith('/admin/design-briefs'),
-                visible: canManageLeads,
-            },
-            {
                 label: 'Template balasan',
                 href: '/admin/lead-templates',
                 icon: MessageSquareQuote,
                 match: startsWith('/admin/lead-templates'),
                 visible: canManageLeads,
+            },
+        ],
+    },
+    {
+        label: 'Produksi',
+        items: [
+            {
+                label: 'Preview desain',
+                href: '/admin/design-briefs',
+                icon: Sparkles,
+                match: startsWith('/admin/design-briefs'),
+                visible: canViewDesignBriefs,
             },
         ],
     },

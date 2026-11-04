@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UserRequest;
 use App\Models\User;
+use App\Models\UserInvitation;
 use App\Services\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Validation\ValidationException;
@@ -27,7 +28,23 @@ class UserController extends Controller
                 'last_login_at' => $user->last_login_at?->toIso8601String(),
                 'created_at' => $user->created_at?->toIso8601String(),
             ])->all(),
+            'invitations' => UserInvitation::query()
+                ->open()
+                ->with('invitedBy:id,name')
+                ->orderBy('expires_at')
+                ->get()
+                ->map(fn (UserInvitation $invitation) => [
+                    'id' => $invitation->id,
+                    'name' => $invitation->name,
+                    'email' => $invitation->email,
+                    'role' => $invitation->role->value,
+                    'role_label' => $invitation->role->label(),
+                    'invited_by' => $invitation->invitedBy?->name,
+                    'expires_at' => $invitation->expires_at?->toIso8601String(),
+                    'expired' => $invitation->isExpired(),
+                ])->all(),
             'roles' => UserRole::options(),
+            'invitationExpiresInDays' => UserInvitation::EXPIRES_IN_DAYS,
         ]);
     }
 
