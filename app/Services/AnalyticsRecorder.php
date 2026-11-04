@@ -22,6 +22,7 @@ class AnalyticsRecorder
         'package_cta_click',
         'portfolio_cta_click',
         'design_generated',
+        'design_updated',
         'design_selected',
         'design_cta_lead',
         'design_cta_packages',

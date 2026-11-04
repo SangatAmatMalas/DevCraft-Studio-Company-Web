@@ -543,7 +543,19 @@ Halaman publik **`/desain`** memungkinkan calon klien mengisi brief singkat dan 
 - Tidak memakai AI, unggahan file, atau screenshot generation; preview dirender dari komponen template React.
 - Pengunjung dapat memilih satu desain, lalu memilih secara setara antara **konsultasi** (`/kontak?desain=...`) atau **melihat paket** (`/paket?desain=...`). Email hanya diminta pada jalur konsultasi.
 - Admin dengan izin leads dapat melihat brief di **Admin → Preview desain** dan melihat konteks pilihan desain pada detail lead.
-- Brief anonim yang sudah kedaluwarsa dapat dibersihkan dengan:
+
+**Karakter visual dan urutan bagian**
+
+- Tiga karakter visual benar-benar mengubah render, bukan sekadar label: **Minimal & bersih** (radius kecil, ritme lapang, heading 600), **Tegas & kontras** (radius besar, ritme padat, heading 800), dan **Tenang & premium** (radius nol, serif, tracking lebar).
+- Bagian pembuka (hero) selalu tampil dan dipasang paling atas. Bagian lain dapat dicentang dan digeser urutannya dengan panah di langkah **Brief**; urutan itu yang dipakai ketiga template.
+- Baris layanan yang dibiarkan kosong otomatis diabaikan, jadi pengunjung tidak perlu menghapus baris kedua sebelum membuat preview.
+- Nomor WhatsApp dinormalisasi (spasi, tanda hubung, dan kurung dibuang; awalan `+` dipertahankan) dan email diubah ke huruf kecil sebelum validasi.
+
+**Edit sebelum final**
+
+Setelah preview muncul, tautan **Edit brief** membuka kembali wizard dengan data terisi (`/desain/{token}/edit`). Menyimpan perubahan memakai `PATCH /desain/{token}` dan langsung memperbarui ketiga preview tanpa mengganti token. Pilihan desain yang masih tersedia dipertahankan. Brief yang sudah dikirim bersama konsultasi (`status = claimed`) tidak bisa diedit lagi dan menampilkan alasan, bukan halaman error.
+
+Brief anonim yang sudah kedaluwarsa dapat dibersihkan dengan:
 
 ```bash
 php artisan app:prune-design-briefs
@@ -560,7 +572,7 @@ npm run build:ssr
 npm run test:e2e     # Playwright: build + disposable SQLite + server
 ```
 
-Cakupan tes saat ini: autentikasi & akun nonaktif, matriks peran/Gate, CRUD layanan/portfolio (termasuk baris repeater kosong), aturan harga paket + placeholder, visibilitas draft/testimoni/tim, formulir lead (validasi, honeypot, rate limit, catatan, ekspor CSV), generator preview desain (tiga varian, noindex, pemilihan, dan atribusi lead), halaman publik, sitemap, halaman error, dan perintah `app:verify-placeholders`. E2E Playwright mencakup perbandingan paket, admin membuat & memublikasikan proyek, serta visitor mengirim brief lalu admin menindaklanjutinya.
+Cakupan tes saat ini: autentikasi & akun nonaktif, matriks peran/Gate, CRUD layanan/portfolio (termasuk baris repeater kosong), aturan harga paket + placeholder, visibilitas draft/testimoni/tim, formulir lead (validasi, honeypot, rate limit, catatan, ekspor CSV), generator preview desain (tiga varian, noindex, pemilihan, atribusi lead, baris layanan kosong, normalisasi kontak, edit brief, dan penguncian brief yang sudah diklaim), halaman publik, sitemap, halaman error, dan perintah `app:verify-placeholders`. E2E Playwright mencakup perbandingan paket, admin membuat & memublikasikan proyek, visitor mengirim brief lalu admin menindaklanjutinya, serta alur lengkap generator desain: membuat preview dengan satu baris layanan, mengubah brief, dan memastikan preview ikut berubah.
 
 Checklist manual sebelum go-live:
 

@@ -20,35 +20,9 @@ class DesignPreviewController extends Controller
     {
         abort_unless((bool) config('design-previews.enabled'), 404);
 
-        $categories = collect((array) config('design-previews.categories'))
-            ->map(fn (array $category, string $key) => [
-                'key' => $key,
-                'label' => $category['label'],
-                'description' => $category['description'],
-            ])
-            ->values()
-            ->all();
-
-        $styles = collect((array) config('design-previews.styles'))
-            ->map(fn (array $style, string $key) => [
-                'key' => $key,
-                'label' => $style['label'],
-                'description' => $style['description'],
-            ])
-            ->values()
-            ->all();
-
-        $sections = collect((array) config('design-previews.sections'))
-            ->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label])
-            ->values()
-            ->all();
-
         return Inertia::render('site/design/index', [
-            'categories' => $categories,
-            'styles' => $styles,
-            'palettes' => array_values((array) config('design-previews.palettes')),
-            'sections' => $sections,
-            'maxServices' => (int) config('design-previews.max_services', 6),
+            ...$this->formOptions(),
+            'brief' => null,
             'seo' => Seo::make(
                 'Coba desain website',
                 'Isi brief singkat tentang usaha Anda dan lihat tiga opsi desain website lengkap dengan preview yang bisa dibuka langsung.',
@@ -75,6 +49,59 @@ class DesignPreviewController extends Controller
         return redirect()
             ->route('desain.hasil', $brief->token)
             ->with('success', 'Tiga opsi desain sudah dibuat. Pilih salah satu untuk melihat preview penuh.');
+    }
+
+    public function edit(DesignBrief $brief): Response|RedirectResponse
+    {
+        abort_unless((bool) config('design-previews.enabled'), 404);
+        abort_if($brief->isExpired(), 410, 'Preview desain ini sudah kedaluwarsa. Silakan buat brief baru.');
+
+        if ($brief->status === 'claimed') {
+            return redirect()
+                ->route('desain.hasil', $brief->token)
+                ->with('error', 'Brief ini sudah dikirim bersama konsultasi, jadi tidak bisa diubah lagi dari tautan ini.');
+        }
+
+        return Inertia::render('site/design/index', [
+            ...$this->formOptions(),
+            'brief' => $this->editPayload($brief),
+            'seo' => Seo::make(
+                'Ubah brief desain — '.$brief->brand_name,
+                'Perbarui teks, warna, dan bagian yang tampil, lalu buat ulang preview desain Anda.',
+                route('desain.edit', $brief->token),
+                'website',
+                [],
+                null,
+                true,
+            ),
+        ])->withViewData(['noindex' => true]);
+    }
+
+    public function update(StoreDesignBriefRequest $request, DesignBrief $brief): RedirectResponse
+    {
+        abort_unless((bool) config('design-previews.enabled'), 404);
+        abort_if($brief->isExpired(), 410, 'Preview desain ini sudah kedaluwarsa. Silakan buat brief baru.');
+
+        if ($brief->status === 'claimed') {
+            return redirect()
+                ->route('desain.hasil', $brief->token)
+                ->with('error', 'Brief ini sudah dikirim bersama konsultasi, jadi tidak bisa diubah lagi dari tautan ini.');
+        }
+
+        DesignBriefFactory::update($brief, $request->validated());
+
+        AnalyticsRecorder::record(
+            $request,
+            'design_updated',
+            '/desain/'.$brief->token.'/edit',
+            'design_brief',
+            $brief->id,
+            ['design_category' => $brief->category, 'step' => 'updated'],
+        );
+
+        return redirect()
+            ->route('desain.hasil', $brief->token)
+            ->with('success', 'Brief diperbarui. Preview di bawah sudah memakai teks terbaru.');
     }
 
     public function result(DesignBrief $brief): Response
@@ -147,6 +174,68 @@ class DesignPreviewController extends Controller
     }
 
     /** @return array<string, mixed> */
+    private function formOptions(): array
+    {
+        $categories = collect((array) config('design-previews.categories'))
+            ->map(fn (array $category, string $key) => [
+                'key' => $key,
+                'label' => $category['label'],
+                'description' => $category['description'],
+            ])
+            ->values()
+            ->all();
+
+        $styles = collect((array) config('design-previews.styles'))
+            ->map(fn (array $style, string $key) => [
+                'key' => $key,
+                'label' => $style['label'],
+                'description' => $style['description'],
+            ])
+            ->values()
+            ->all();
+
+        $sections = collect((array) config('design-previews.sections'))
+            ->map(fn (string $label, string $key) => ['key' => $key, 'label' => $label])
+            ->values()
+            ->all();
+
+        return [
+            'categories' => $categories,
+            'styles' => $styles,
+            'palettes' => array_values((array) config('design-previews.palettes')),
+            'sections' => $sections,
+            'maxServices' => (int) config('design-previews.max_services', 6),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function editPayload(DesignBrief $brief): array
+    {
+        return [
+            'token' => $brief->token,
+            'category' => $brief->category,
+            'style' => $brief->style,
+            'brand_name' => $brief->brand_name,
+            'tagline' => $brief->tagline,
+            'description' => $brief->description,
+            'services' => collect($brief->serviceItems())
+                ->map(fn (array $item) => [
+                    'title' => $item['title'],
+                    'description' => $item['description'] ?? '',
+                ])
+                ->all(),
+            'contact' => [
+                'whatsapp' => (string) ($brief->contact['whatsapp'] ?? ''),
+                'email' => (string) ($brief->contact['email'] ?? ''),
+                'city' => (string) ($brief->contact['city'] ?? ''),
+            ],
+            'primary_color' => $brief->primary_color,
+            'sections' => $brief->sections ?: [],
+            'result_url' => $brief->resultUrl(),
+        ];
+    }
+
+    /** @return array<string, mixed> */
     private function briefPayload(DesignBrief $brief): array
     {
         return [
@@ -170,6 +259,7 @@ class DesignPreviewController extends Controller
             'chosen_label' => $brief->chosen_template ? $brief->templateLabel() : null,
             'chosen_at' => $brief->chosen_at?->toIso8601String(),
             'expires_at' => $brief->expires_at?->toIso8601String(),
+            'edit_url' => $brief->status === 'claimed' ? null : route('desain.edit', $brief->token),
             'lead_url' => route('kontak', ['desain' => $brief->token]),
             'packages_url' => route('paket.index', ['desain' => $brief->token]),
             'whatsapp_url' => WhatsAppLink::forContext(

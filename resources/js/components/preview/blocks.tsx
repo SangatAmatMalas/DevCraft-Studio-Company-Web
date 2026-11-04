@@ -6,10 +6,71 @@ import type { DesignBriefPreview } from '@/types';
 
 export type PreviewVariant = 'bold' | 'editorial' | 'catalog';
 
-type PreviewStyle = CSSProperties & { '--pv-primary': string };
+type PreviewStyle = CSSProperties & {
+    '--pv-primary': string;
+    '--pv-radius': string;
+    '--pv-pad': string;
+    '--pv-card-pad': string;
+    '--pv-heading-weight': string;
+    '--pv-tracking': string;
+    '--pv-font': string;
+};
+
+interface StylePreset {
+    radius: string;
+    pad: string;
+    cardPad: string;
+    headingWeight: string;
+    tracking: string;
+    font: string;
+}
+
+const SANS = "'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif";
+
+/**
+ * The three "characters" visitors can pick must actually change the render,
+ * not just a badge label. Each preset adjusts radius, rhythm, contrast weight
+ * and typeface; blocks below consume the variables instead of hardcoding them.
+ */
+const STYLE_PRESETS: Record<string, StylePreset> = {
+    minimal: {
+        radius: '0.375rem',
+        pad: '4.5rem',
+        cardPad: '1.5rem',
+        headingWeight: '600',
+        tracking: '-0.01em',
+        font: SANS,
+    },
+    bold: {
+        radius: '1.25rem',
+        pad: '3.75rem',
+        cardPad: '1.5rem',
+        headingWeight: '800',
+        tracking: '-0.03em',
+        font: SANS,
+    },
+    elegant: {
+        radius: '0',
+        pad: '5.5rem',
+        cardPad: '1.75rem',
+        headingWeight: '500',
+        tracking: '0.025em',
+        font: "Georgia, 'Times New Roman', 'Noto Serif', serif",
+    },
+};
 
 export function previewStyle(brief: DesignBriefPreview): PreviewStyle {
-    return { '--pv-primary': brief.primary_color };
+    const preset = STYLE_PRESETS[brief.style] ?? STYLE_PRESETS.minimal;
+
+    return {
+        '--pv-primary': brief.primary_color,
+        '--pv-radius': preset.radius,
+        '--pv-pad': preset.pad,
+        '--pv-card-pad': preset.cardPad,
+        '--pv-heading-weight': preset.headingWeight,
+        '--pv-tracking': preset.tracking,
+        '--pv-font': preset.font,
+    };
 }
 
 export function mix(color: string, percent: number): string {
@@ -26,12 +87,13 @@ export function initials(name: string): string {
 }
 
 export function PreviewNav({ brief, variant }: { brief: DesignBriefPreview; variant: PreviewVariant }) {
+    const hasContact = brief.sections.includes('contact');
     const links = [
         brief.sections.includes('services') ? { label: 'Layanan', href: '#layanan' } : null,
         brief.sections.includes('about') ? { label: 'Tentang', href: '#tentang' } : null,
         brief.sections.includes('gallery') ? { label: 'Galeri', href: '#galeri' } : null,
         brief.sections.includes('faq') ? { label: 'FAQ', href: '#faq' } : null,
-        { label: 'Kontak', href: '#kontak' },
+        hasContact ? { label: 'Kontak', href: '#kontak' } : null,
     ].filter(Boolean) as { label: string; href: string }[];
 
     if (variant === 'bold') {
@@ -46,12 +108,14 @@ export function PreviewNav({ brief, variant }: { brief: DesignBriefPreview; vari
                             </a>
                         ))}
                     </nav>
-                    <a
-                        href="#kontak"
-                        className="hidden rounded-full bg-[var(--pv-primary)] px-4 py-2 text-sm font-semibold text-white sm:inline-flex"
-                    >
-                        Hubungi kami
-                    </a>
+                    {hasContact ? (
+                        <a
+                            href="#kontak"
+                            className="hidden rounded-full bg-[var(--pv-primary)] px-4 py-2 text-sm font-semibold text-white sm:inline-flex"
+                        >
+                            Hubungi kami
+                        </a>
+                    ) : null}
                 </div>
             </header>
         );
@@ -69,12 +133,14 @@ export function PreviewNav({ brief, variant }: { brief: DesignBriefPreview; vari
                             </a>
                         ))}
                     </nav>
-                    <a
-                        href="#kontak"
-                        className="hidden border border-[#2b2620] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] sm:inline-flex"
-                    >
-                        Diskusi
-                    </a>
+                    {hasContact ? (
+                        <a
+                            href="#kontak"
+                            className="hidden border border-[#2b2620] px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] sm:inline-flex"
+                        >
+                            Diskusi
+                        </a>
+                    ) : null}
                 </div>
             </header>
         );
@@ -95,12 +161,14 @@ export function PreviewNav({ brief, variant }: { brief: DesignBriefPreview; vari
                         </a>
                     ))}
                 </nav>
-                <a
-                    href="#kontak"
-                    className="rounded-full bg-[var(--pv-primary)] px-4 py-2 text-sm font-semibold text-white"
-                >
-                    Hubungi
-                </a>
+                {hasContact ? (
+                    <a
+                        href="#kontak"
+                        className="rounded-full bg-[var(--pv-primary)] px-4 py-2 text-sm font-semibold text-white"
+                    >
+                        Hubungi
+                    </a>
+                ) : null}
             </div>
         </header>
     );
@@ -110,7 +178,7 @@ export function BrandMark({ brief, tone = 'light' }: { brief: DesignBriefPreview
     return (
         <a href="#atas" className="flex items-center gap-2.5">
             <span
-                className="grid h-9 w-9 place-items-center rounded-lg text-sm font-extrabold text-white"
+                className="grid h-9 w-9 place-items-center rounded-[var(--pv-radius)] text-sm font-extrabold text-white"
                 style={{ backgroundColor: 'var(--pv-primary)' }}
             >
                 {initials(brief.brand_name)}
@@ -137,7 +205,7 @@ function SectionLabel({ children, tone = 'light' }: { children: ReactNode; tone?
 
 export function HeroBold({ brief }: { brief: DesignBriefPreview }) {
     return (
-        <section id="atas" className="relative overflow-hidden bg-[#0f172a] px-5 py-16 text-white sm:px-8 sm:py-24">
+        <section id="atas" className="relative overflow-hidden bg-[#0f172a] px-5 py-[var(--pv-pad)] text-white sm:px-8 sm:py-24">
             <div
                 className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full opacity-30 blur-3xl"
                 style={{ backgroundColor: 'var(--pv-primary)' }}
@@ -154,13 +222,15 @@ export function HeroBold({ brief }: { brief: DesignBriefPreview }) {
                             `Halaman ini akan menampilkan ${brief.brand_name} secara ringkas: siapa Anda, apa yang dikerjakan, dan bagaimana calon pelanggan bisa menghubungi.`}
                     </p>
                     <div className="mt-8 flex flex-wrap gap-3">
-                        <a
-                            href="#kontak"
-                            className="inline-flex items-center gap-2 rounded-full bg-[var(--pv-primary)] px-6 py-3 text-sm font-semibold text-white"
-                        >
-                            Mulai diskusi
-                            <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                        </a>
+                        {brief.sections.includes('contact') ? (
+                            <a
+                                href="#kontak"
+                                className="inline-flex items-center gap-2 rounded-full bg-[var(--pv-primary)] px-6 py-3 text-sm font-semibold text-white"
+                            >
+                                Mulai diskusi
+                                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                            </a>
+                        ) : null}
                         {brief.sections.includes('services') ? (
                             <a
                                 href="#layanan"
@@ -172,18 +242,18 @@ export function HeroBold({ brief }: { brief: DesignBriefPreview }) {
                     </div>
                 </div>
                 <div className="relative hidden lg:block">
-                    <div className="rounded-2xl border border-white/15 bg-white/5 p-5 backdrop-blur">
+                    <div className="rounded-[var(--pv-radius)] border border-white/15 bg-white/5 p-5 backdrop-blur">
                         <div className="flex items-center justify-between text-xs text-white/50">
                             <span>{brief.brand_name}</span>
                             <span>{brief.category_label}</span>
                         </div>
-                        <div className="mt-4 aspect-[4/3] overflow-hidden rounded-xl" style={{ background: mix('var(--pv-primary)', 26) }}>
+                        <div className="mt-4 aspect-[4/3] overflow-hidden rounded-[var(--pv-radius)]" style={{ background: mix('var(--pv-primary)', 26) }}>
                             <div className="grid h-full grid-cols-2 gap-2 p-3">
                                 {brief.services.slice(0, 3).map((service, index) => (
                                     <div
                                         key={service.title}
                                         className={cn(
-                                            'rounded-lg bg-white/10 p-3 text-[0.7rem] text-white/80',
+                                            'rounded-[var(--pv-radius)] bg-white/10 p-3 text-[0.7rem] text-white/80',
                                             index === 0 && 'col-span-2',
                                         )}
                                     >
@@ -205,7 +275,7 @@ export function HeroBold({ brief }: { brief: DesignBriefPreview }) {
 
 export function HeroEditorial({ brief }: { brief: DesignBriefPreview }) {
     return (
-        <section id="atas" className="bg-[#faf8f4] px-5 py-14 text-[#2b2620] sm:px-8 sm:py-20">
+        <section id="atas" className="bg-[#faf8f4] px-5 py-[var(--pv-pad)] text-[#2b2620] sm:px-8 sm:py-20">
             <div className="mx-auto grid max-w-5xl gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
                 <div>
                     <SectionLabel>{brief.category_label}</SectionLabel>
@@ -218,18 +288,20 @@ export function HeroEditorial({ brief }: { brief: DesignBriefPreview }) {
                     {brief.description ? (
                         <p className="mt-5 max-w-xl text-sm leading-relaxed text-[#6c6358]">{brief.description}</p>
                     ) : null}
-                    <a
-                        href="#kontak"
-                        className="mt-8 inline-flex items-center gap-2 border-b-2 border-[var(--pv-primary)] pb-1 text-sm font-semibold text-[#2b2620]"
-                    >
-                        Mulai percakapan
-                        <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                    </a>
+                    {brief.sections.includes('contact') ? (
+                        <a
+                            href="#kontak"
+                            className="mt-8 inline-flex items-center gap-2 border-b-2 border-[var(--pv-primary)] pb-1 text-sm font-semibold text-[#2b2620]"
+                        >
+                            Mulai percakapan
+                            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                        </a>
+                    ) : null}
                 </div>
                 <div className="relative">
-                    <div className="aspect-[4/5] rounded-sm border border-[#e7e1d8] p-4">
+                    <div className="aspect-[4/5] rounded-[var(--pv-radius)] border border-[#e7e1d8] p-4">
                         <div
-                            className="flex h-full flex-col justify-between rounded-sm p-6 text-white"
+                            className="flex h-full flex-col justify-between rounded-[var(--pv-radius)] p-6 text-white"
                             style={{ background: 'linear-gradient(150deg, var(--pv-primary), color-mix(in srgb, var(--pv-primary) 55%, #0f172a))' }}
                         >
                             <span className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-white/70">
@@ -252,7 +324,7 @@ export function HeroEditorial({ brief }: { brief: DesignBriefPreview }) {
 
 export function HeroCatalog({ brief }: { brief: DesignBriefPreview }) {
     return (
-        <section id="atas" className="border-b border-slate-200 bg-white px-5 py-10 sm:px-8 sm:py-14">
+        <section id="atas" className="border-b border-slate-200 bg-white px-5 py-10 sm:px-8 sm:py-[var(--pv-pad)]">
             <div className="mx-auto max-w-6xl">
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-600">{brief.category_label}</span>
@@ -285,7 +357,7 @@ export function HeroCatalog({ brief }: { brief: DesignBriefPreview }) {
                         {[0, 1, 2].map((index) => (
                             <div
                                 key={index}
-                                className="aspect-square rounded-lg"
+                                className="aspect-square rounded-[var(--pv-radius)]"
                                 style={{
                                     background:
                                         index === 0
@@ -309,7 +381,7 @@ export function ServicesBold({ brief }: { brief: DesignBriefPreview }) {
     }
 
     return (
-        <section id="layanan" className="bg-white px-5 py-16 sm:px-8">
+        <section id="layanan" className="bg-white px-5 py-[var(--pv-pad)] sm:px-8">
             <div className="mx-auto max-w-6xl">
                 <SectionLabel>Layanan</SectionLabel>
                 <h2 className="mt-3 max-w-2xl font-display text-3xl font-bold tracking-tight text-slate-900">
@@ -317,7 +389,7 @@ export function ServicesBold({ brief }: { brief: DesignBriefPreview }) {
                 </h2>
                 <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                     {brief.services.map((service, index) => (
-                        <article key={service.title} className="rounded-2xl border border-slate-200 p-6">
+                        <article key={service.title} className="rounded-[var(--pv-radius)] border border-slate-200 p-6">
                             <span className="text-xs font-bold text-[var(--pv-primary)]">{String(index + 1).padStart(2, '0')}</span>
                             <h3 className="mt-3 font-display text-lg font-bold text-slate-900">{service.title}</h3>
                             <p className="mt-2 text-sm leading-relaxed text-slate-600">
@@ -337,7 +409,7 @@ export function ServicesEditorial({ brief }: { brief: DesignBriefPreview }) {
     }
 
     return (
-        <section id="layanan" className="border-t border-[#e7e1d8] bg-[#faf8f4] px-5 py-16 text-[#2b2620] sm:px-8">
+        <section id="layanan" className="border-t border-[#e7e1d8] bg-[#faf8f4] px-5 py-[var(--pv-pad)] text-[#2b2620] sm:px-8">
             <div className="mx-auto max-w-5xl">
                 <SectionLabel>Yang kami kerjakan</SectionLabel>
                 <div className="mt-8 divide-y divide-[#e7e1d8] border-y border-[#e7e1d8]">
@@ -362,7 +434,7 @@ export function ServicesCatalog({ brief }: { brief: DesignBriefPreview }) {
     }
 
     return (
-        <section id="layanan" className="bg-slate-50 px-5 py-14 sm:px-8">
+        <section id="layanan" className="bg-slate-50 px-5 py-[var(--pv-pad)] sm:px-8">
             <div className="mx-auto max-w-6xl">
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <div>
@@ -377,7 +449,7 @@ export function ServicesCatalog({ brief }: { brief: DesignBriefPreview }) {
                 </div>
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {brief.services.map((service, index) => (
-                        <article key={service.title} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                        <article key={service.title} className="overflow-hidden rounded-[var(--pv-radius)] border border-slate-200 bg-white">
                             <div className="aspect-[16/9]" style={{ backgroundColor: mix('var(--pv-primary)', index === 0 ? 45 : 14) }} />
                             <div className="p-4">
                                 <h3 className="font-display text-base font-bold text-slate-900">{service.title}</h3>
@@ -402,7 +474,7 @@ export function AboutBlock({ brief, variant }: { brief: DesignBriefPreview; vari
         <section
             id="tentang"
             className={cn(
-                'px-5 py-16 sm:px-8',
+                'px-5 py-[var(--pv-pad)] sm:px-8',
                 variant === 'bold' && 'bg-[#0f172a] text-white',
                 variant === 'editorial' && 'bg-white text-[#2b2620]',
                 variant === 'catalog' && 'bg-white text-slate-900',
@@ -426,7 +498,7 @@ export function AboutBlock({ brief, variant }: { brief: DesignBriefPreview; vari
                                 <div
                                     key={item.title}
                                     className={cn(
-                                        'rounded-xl border p-4 text-sm',
+                                        'rounded-[var(--pv-radius)] border p-4 text-sm',
                                         variant === 'bold' ? 'border-white/15 text-white/70' : 'border-slate-200 text-slate-600',
                                     )}
                                 >
@@ -452,7 +524,7 @@ export function GalleryBlock({ brief, variant }: { brief: DesignBriefPreview; va
             id="galeri"
             aria-label={`Galeri ${brief.brand_name}`}
             className={cn(
-                'px-5 py-16 sm:px-8',
+                'px-5 py-[var(--pv-pad)] sm:px-8',
                 variant === 'bold' && 'bg-slate-100',
                 variant === 'editorial' && 'bg-[#f3efe8]',
                 variant === 'catalog' && 'bg-white',
@@ -480,7 +552,7 @@ export function GalleryBlock({ brief, variant }: { brief: DesignBriefPreview; va
                         <div
                             key={tile}
                             className={cn(
-                                'relative overflow-hidden rounded-xl border border-black/5',
+                                'relative overflow-hidden rounded-[var(--pv-radius)] border border-black/5',
                                 variant === 'editorial' && tile === 0 && 'sm:col-span-2 sm:row-span-2',
                             )}
                             style={{
@@ -524,7 +596,7 @@ export function FaqBlock({ brief, variant }: { brief: DesignBriefPreview; varian
         <section
             id="faq"
             className={cn(
-                'px-5 py-16 sm:px-8',
+                'px-5 py-[var(--pv-pad)] sm:px-8',
                 variant === 'bold' && 'bg-white',
                 variant === 'editorial' && 'bg-[#faf8f4]',
                 variant === 'catalog' && 'bg-slate-50',
@@ -562,7 +634,7 @@ export function ContactBlock({ brief, variant }: { brief: DesignBriefPreview; va
         <section
             id="kontak"
             className={cn(
-                'px-5 py-16 sm:px-8',
+                'px-5 py-[var(--pv-pad)] sm:px-8',
                 dark && 'bg-[#0f172a] text-white',
                 variant === 'editorial' && 'bg-[var(--pv-primary)] text-white',
                 variant === 'catalog' && 'bg-white text-slate-900',
@@ -600,7 +672,7 @@ export function ContactBlock({ brief, variant }: { brief: DesignBriefPreview; va
                             ) : null}
                         </ul>
                     ) : (
-                        <p className={cn('mt-5 rounded-xl border border-dashed p-4 text-xs', dark ? 'border-white/20 text-white/60' : 'border-slate-300 text-slate-500')}>
+                        <p className={cn('mt-5 rounded-[var(--pv-radius)] border border-dashed p-4 text-xs', dark ? 'border-white/20 text-white/60' : 'border-slate-300 text-slate-500')}>
                             Nomor WhatsApp, email, dan kota belum diisi pada brief. Informasi ini akan tampil setelah dilengkapi.
                         </p>
                     )}
@@ -608,21 +680,21 @@ export function ContactBlock({ brief, variant }: { brief: DesignBriefPreview; va
 
                 <div
                     className={cn(
-                        'rounded-2xl border p-5',
+                        'rounded-[var(--pv-radius)] border p-5',
                         dark || variant === 'editorial' ? 'border-white/15 bg-white/5' : 'border-slate-200 bg-slate-50',
                     )}
                 >
                     <div className="grid gap-3">
-                        <div className={cn('rounded-lg border px-3 py-2 text-xs', dark ? 'border-white/15 text-white/50' : 'border-slate-200 bg-white text-slate-400')}>
+                        <div className={cn('rounded-[var(--pv-radius)] border px-3 py-2 text-xs', dark ? 'border-white/15 text-white/50' : 'border-slate-200 bg-white text-slate-400')}>
                             Nama
                         </div>
-                        <div className={cn('rounded-lg border px-3 py-2 text-xs', dark ? 'border-white/15 text-white/50' : 'border-slate-200 bg-white text-slate-400')}>
+                        <div className={cn('rounded-[var(--pv-radius)] border px-3 py-2 text-xs', dark ? 'border-white/15 text-white/50' : 'border-slate-200 bg-white text-slate-400')}>
                             Email atau WhatsApp
                         </div>
-                        <div className={cn('rounded-lg border px-3 py-8 text-xs', dark ? 'border-white/15 text-white/50' : 'border-slate-200 bg-white text-slate-400')}>
+                        <div className={cn('rounded-[var(--pv-radius)] border px-3 py-8 text-xs', dark ? 'border-white/15 text-white/50' : 'border-slate-200 bg-white text-slate-400')}>
                             Pesan
                         </div>
-                        <div className="rounded-lg bg-[var(--pv-primary)] px-4 py-2.5 text-center text-xs font-semibold text-white">
+                        <div className="rounded-[var(--pv-radius)] bg-[var(--pv-primary)] px-4 py-2.5 text-center text-xs font-semibold text-white">
                             Kirim pesan
                         </div>
                     </div>
@@ -642,7 +714,7 @@ export function PreviewFooter({ brief, variant }: { brief: DesignBriefPreview; v
         <footer className={cn('px-5 py-8 text-xs sm:px-8', dark ? 'bg-[#0b1220] text-white/50' : 'border-t border-slate-200 bg-slate-50 text-slate-500')}>
             <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-2">
-                    <span className="grid h-7 w-7 place-items-center rounded-md text-[0.6rem] font-bold text-white" style={{ backgroundColor: 'var(--pv-primary)' }}>
+                    <span className="grid h-7 w-7 place-items-center rounded-[var(--pv-radius)] text-[0.6rem] font-bold text-white" style={{ backgroundColor: 'var(--pv-primary)' }}>
                         {initials(brief.brand_name)}
                     </span>
                     <span>
@@ -652,5 +724,46 @@ export function PreviewFooter({ brief, variant }: { brief: DesignBriefPreview; v
                 <p>Preview dibuat dengan DevCraft Studio · {new Date().getFullYear()}</p>
             </div>
         </footer>
+    );
+}
+
+/**
+ * Renders every section the visitor kept, in the order they arranged them.
+ * The hero is rendered by the template itself because it must always lead.
+ */
+export function SectionList({ brief, variant }: { brief: DesignBriefPreview; variant: PreviewVariant }) {
+    return (
+        <>
+            {brief.sections
+                .filter((key) => key !== 'hero')
+                .map((key) => {
+                    switch (key) {
+                        case 'services':
+                            if (!brief.services.length) {
+                                return null;
+                            }
+
+                            if (variant === 'bold') {
+                                return <ServicesBold key={key} brief={brief} />;
+                            }
+
+                            return variant === 'editorial' ? (
+                                <ServicesEditorial key={key} brief={brief} />
+                            ) : (
+                                <ServicesCatalog key={key} brief={brief} />
+                            );
+                        case 'about':
+                            return <AboutBlock key={key} brief={brief} variant={variant} />;
+                        case 'gallery':
+                            return <GalleryBlock key={key} brief={brief} variant={variant} />;
+                        case 'faq':
+                            return <FaqBlock key={key} brief={brief} variant={variant} />;
+                        case 'contact':
+                            return <ContactBlock key={key} brief={brief} variant={variant} />;
+                        default:
+                            return null;
+                    }
+                })}
+        </>
     );
 }

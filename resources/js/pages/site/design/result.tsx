@@ -9,6 +9,7 @@ import {
     MessageSquare,
     Monitor,
     Package,
+    Pencil,
     Smartphone,
     Sparkles,
     Tablet,
@@ -94,6 +95,21 @@ export default function DesignResult({ brief, seo }: { brief: DesignBriefResult;
                                     metadata={{ template: brief.chosen ?? 'all', design_category: brief.category, source: 'design_result' }}
                                     compact
                                 />
+                            </div>
+                            <div className="mt-3 border-t border-border pt-3">
+                                {brief.edit_url ? (
+                                    <Link
+                                        href={brief.edit_url}
+                                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-700 hover:underline"
+                                    >
+                                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                                        Edit brief &amp; buat ulang preview
+                                    </Link>
+                                ) : (
+                                    <p className="text-[0.7rem] leading-relaxed text-muted-foreground">
+                                        Brief ini sudah dikirim bersama konsultasi, jadi tidak bisa diubah lagi dari tautan ini.
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -290,12 +306,22 @@ export default function DesignResult({ brief, seo }: { brief: DesignBriefResult;
                             Preview ini adalah simulasi layout, bukan website final. Gambar masih placeholder dan tidak ada angka,
                             testimoni, atau klien fiktif di dalamnya. Brief disimpan maksimal 30 hari.
                         </p>
-                        <Button asChild variant="outline" className="shrink-0 rounded-xl bg-white">
-                            <Link href="/desain">
-                                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                                Buat brief baru
-                            </Link>
-                        </Button>
+                        <div className="flex shrink-0 flex-wrap items-center gap-2">
+                            {brief.edit_url ? (
+                                <Button asChild variant="outline" className="rounded-xl bg-white">
+                                    <Link href={brief.edit_url}>
+                                        <Pencil className="h-4 w-4" aria-hidden="true" />
+                                        Edit brief
+                                    </Link>
+                                </Button>
+                            ) : null}
+                            <Button asChild variant="outline" className="rounded-xl bg-white">
+                                <Link href="/desain">
+                                    <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                                    Buat brief baru
+                                </Link>
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </section>

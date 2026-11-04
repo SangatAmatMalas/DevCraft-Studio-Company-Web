@@ -126,3 +126,107 @@ it('includes the design context in the result whatsapp link', function () {
             fn ($url) => is_string($url) && str_contains(urldecode($url), 'preview desain Studio Pagi'),
         ));
 });
+
+it('ignores untouched service rows so an empty second row does not block the brief', function () {
+    $this->post('/desain', validDesignBriefPayload([
+        'services' => [
+            ['title' => 'Identitas visual', 'description' => 'Logo dan panduan visual.'],
+            ['title' => '', 'description' => ''],
+        ],
+    ]))->assertRedirect()->assertSessionHasNoErrors();
+
+    $brief = DesignBrief::query()->firstOrFail();
+
+    expect($brief->services)->toHaveCount(1)
+        ->and($brief->services[0]['title'])->toBe('Identitas visual');
+});
+
+it('still rejects a service row that has description but no title', function () {
+    $this->post('/desain', validDesignBriefPayload([
+        'services' => [
+            ['title' => 'Identitas visual', 'description' => 'Logo dan panduan visual.'],
+            ['title' => '', 'description' => 'Deskripsi tanpa nama.'],
+        ],
+    ]))->assertSessionHasErrors('services.1.title');
+
+    expect(DesignBrief::query()->count())->toBe(0);
+});
+
+it('normalises phone numbers and email before storing the brief', function () {
+    $this->post('/desain', validDesignBriefPayload([
+        'contact' => [
+            'whatsapp' => '+62 (812) 3456-7890',
+            'email' => 'Halo@StudioPagi.Test',
+            'city' => 'Bandung',
+        ],
+    ]))->assertRedirect()->assertSessionHasNoErrors();
+
+    $brief = DesignBrief::query()->firstOrFail();
+
+    expect($brief->contact['whatsapp'])->toBe('+6281234567890')
+        ->and($brief->contact['email'])->toBe('halo@studiopagi.test');
+});
+
+it('shows the wizard prefilled for editing and keeps the same token after update', function () {
+    $brief = DesignBrief::query()->create([
+        ...validDesignBriefPayload(),
+        'templates' => ['bold-hero', 'editorial-split', 'grid-catalog'],
+        'chosen_template' => 'editorial-split',
+        'chosen_at' => now(),
+        'expires_at' => now()->addDays(30),
+        'status' => 'selected',
+    ]);
+
+    $this->get("/desain/{$brief->token}/edit")
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('site/design/index')
+            ->where('brief.token', $brief->token)
+            ->where('brief.brand_name', 'Studio Pagi')
+            ->where('brief.sections', ['hero', 'services', 'about', 'contact'])
+            ->has('brief.services', 2));
+
+    $this->patch("/desain/{$brief->token}", validDesignBriefPayload([
+        'tagline' => 'Tagline yang sudah diperbarui',
+        'services' => [['title' => 'Satu layanan saja', 'description' => '']],
+    ]))->assertRedirect("/desain/{$brief->token}");
+
+    $updated = $brief->fresh();
+
+    expect($updated->id)->toBe($brief->id)
+        ->and($updated->token)->toBe($brief->token)
+        ->and($updated->tagline)->toBe('Tagline yang sudah diperbarui')
+        ->and($updated->services)->toHaveCount(1)
+        ->and($updated->chosen_template)->toBe('editorial-split');
+});
+
+it('blocks editing once the brief has been attached to a consultation lead', function () {
+    $brief = DesignBrief::query()->create([
+        ...validDesignBriefPayload(),
+        'templates' => ['bold-hero', 'editorial-split', 'grid-catalog'],
+        'expires_at' => now()->addDays(30),
+        'status' => 'claimed',
+    ]);
+
+    $this->get("/desain/{$brief->token}/edit")
+        ->assertRedirect("/desain/{$brief->token}")
+        ->assertSessionHas('error');
+
+    $this->patch("/desain/{$brief->token}", validDesignBriefPayload(['tagline' => 'Tidak boleh tersimpan']))
+        ->assertRedirect("/desain/{$brief->token}")
+        ->assertSessionHas('error');
+
+    expect($brief->fresh()->tagline)->toBe('Ruang kreatif untuk brand lokal');
+});
+
+it('does not allow editing an expired brief', function () {
+    $brief = DesignBrief::query()->create([
+        ...validDesignBriefPayload(),
+        'templates' => ['bold-hero', 'editorial-split', 'grid-catalog'],
+        'expires_at' => now()->subMinute(),
+        'status' => 'generated',
+    ]);
+
+    $this->get("/desain/{$brief->token}/edit")->assertGone();
+    $this->patch("/desain/{$brief->token}", validDesignBriefPayload())->assertGone();
+});

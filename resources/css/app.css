@@ -267,3 +267,19 @@
         scroll-behavior: auto !important;
     }
 }
+
+/*
+ * Design previews render inside iframes and must follow the style the visitor
+ * picked ("minimal", "bold", "elegant"). These rules sit outside the Tailwind
+ * layers so the per-preview CSS variables win over utility classes.
+ */
+.preview-root {
+    font-family: var(--pv-font, inherit);
+}
+
+.preview-root :is(h1, h2, h3) {
+    font-family: var(--pv-font, inherit);
+    font-weight: var(--pv-heading-weight, 700);
+    letter-spacing: var(--pv-tracking, normal);
+}
+

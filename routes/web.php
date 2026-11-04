@@ -39,6 +39,10 @@ Route::post('/desain', [DesignPreviewController::class, 'store'])
     ->middleware('throttle:lead-submissions')
     ->name('desain.store');
 Route::get('/desain/{brief}', [DesignPreviewController::class, 'result'])->name('desain.hasil');
+Route::get('/desain/{brief}/edit', [DesignPreviewController::class, 'edit'])->name('desain.edit');
+Route::patch('/desain/{brief}', [DesignPreviewController::class, 'update'])
+    ->middleware('throttle:lead-submissions')
+    ->name('desain.update');
 Route::get('/desain/{brief}/preview/{template}', [DesignPreviewController::class, 'preview'])->name('desain.preview');
 Route::post('/desain/{brief}/pilih', [DesignPreviewController::class, 'select'])
     ->middleware('throttle:30,1')

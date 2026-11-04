@@ -108,6 +108,20 @@ export interface DesignBriefContext {
     message_seed: string;
 }
 
+export interface DesignBriefEditPayload {
+    token: string;
+    category: string;
+    style: string;
+    brand_name: string;
+    tagline: string;
+    description: string;
+    services: { title: string; description: string }[];
+    contact: { whatsapp: string; email: string; city: string };
+    primary_color: string;
+    sections: string[];
+    result_url: string;
+}
+
 export interface DesignBriefPreview {
     token: string;
     brand_name: string;
@@ -138,6 +152,7 @@ export interface DesignBriefResult extends Omit<DesignBriefPreview, 'description
     chosen_label: string | null;
     chosen_at: string | null;
     expires_at: string | null;
+    edit_url: string | null;
     lead_url: string;
     packages_url: string;
     whatsapp_url: string | null;

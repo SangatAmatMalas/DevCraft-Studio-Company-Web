@@ -1,5 +1,5 @@
 import { Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, ArrowRight, Check, Palette, Plus, Sparkles, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp, Palette, Plus, Sparkles, Trash2 } from 'lucide-react';
 import { FormEvent, useMemo, useState } from 'react';
 
 import Breadcrumbs from '@/components/site/breadcrumbs';
@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import type { Seo } from '@/types';
+import type { DesignBriefEditPayload, Seo } from '@/types';
 
 interface Category {
     key: string;
@@ -63,6 +63,7 @@ export default function DesignIndex({
     palettes,
     sections,
     maxServices,
+    brief,
     seo,
 }: {
     categories: Category[];
@@ -70,29 +71,45 @@ export default function DesignIndex({
     palettes: PaletteOption[];
     sections: SectionOption[];
     maxServices: number;
+    brief: DesignBriefEditPayload | null;
     seo: Seo;
 }) {
-    const [step, setStep] = useState(0);
+    const editing = brief !== null;
+
+    const [step, setStep] = useState(brief ? 1 : 0);
     const [stepError, setStepError] = useState<string | null>(null);
 
+    const initialSections = useMemo(() => {
+        const chosen = brief?.sections?.length ? brief.sections : sections.map((section) => section.key);
+
+        return chosen.includes('hero') ? chosen : ['hero', ...chosen];
+    }, [brief, sections]);
+
     const form = useForm<DesignFormData>({
-        category: categories[0]?.key ?? '',
-        style: styles[0]?.key ?? 'minimal',
-        brand_name: '',
-        tagline: '',
-        description: '',
-        services: [
-            { title: '', description: '' },
-            { title: '', description: '' },
-        ],
-        contact: { whatsapp: '', email: '', city: '' },
-        primary_color: palettes[0]?.value ?? '#2563eb',
-        sections: sections.map((section) => section.key),
-        privacy_consent: false,
+        category: brief?.category ?? categories[0]?.key ?? '',
+        style: brief?.style ?? styles[0]?.key ?? 'minimal',
+        brand_name: brief?.brand_name ?? '',
+        tagline: brief?.tagline ?? '',
+        description: brief?.description ?? '',
+        services: brief?.services?.length
+            ? brief.services.map((service) => ({ title: service.title, description: service.description ?? '' }))
+            : [
+                  { title: '', description: '' },
+                  { title: '', description: '' },
+              ],
+        contact: {
+            whatsapp: brief?.contact.whatsapp ?? '',
+            email: brief?.contact.email ?? '',
+            city: brief?.contact.city ?? '',
+        },
+        primary_color: brief?.primary_color ?? palettes[0]?.value ?? '#2563eb',
+        sections: initialSections,
+        privacy_consent: editing,
         website: '',
     });
 
     const errors = form.errors as Record<string, string | undefined>;
+    const errorList = useMemo(() => Array.from(new Set(Object.values(errors).filter((message): message is string => Boolean(message)))), [errors]);
     const selectedCategory = useMemo(() => categories.find((item) => item.key === form.data.category), [categories, form.data.category]);
     const selectedStyle = useMemo(() => styles.find((item) => item.key === form.data.style), [styles, form.data.style]);
 
@@ -121,10 +138,39 @@ export default function DesignIndex({
     };
 
     const toggleSection = (key: string) => {
+        if (key === 'hero') {
+            return;
+        }
+
         form.setData(
             'sections',
             form.data.sections.includes(key) ? form.data.sections.filter((item) => item !== key) : [...form.data.sections, key],
         );
+    };
+
+    const sectionLabels = useMemo(() => new Map(sections.map((section) => [section.key, section.label])), [sections]);
+
+    const orderedSections = useMemo(() => {
+        const selected = form.data.sections.map((key) => ({ key, label: sectionLabels.get(key) ?? key, selected: true }));
+        const remaining = sections
+            .filter((section) => !form.data.sections.includes(section.key))
+            .map((section) => ({ key: section.key, label: section.label, selected: false }));
+
+        return [...selected, ...remaining];
+    }, [form.data.sections, sectionLabels, sections]);
+
+    const moveSection = (key: string, direction: -1 | 1) => {
+        const index = form.data.sections.indexOf(key);
+        const target = index + direction;
+
+        // The hero stays pinned as the first section.
+        if (index < 1 || target < 1 || target >= form.data.sections.length) {
+            return;
+        }
+
+        const next = [...form.data.sections];
+        [next[index], next[target]] = [next[target], next[index]];
+        form.setData('sections', next);
     };
 
     const validateStep = (current: number): boolean => {
@@ -169,6 +215,32 @@ export default function DesignIndex({
         setStep((current) => Math.max(current - 1, 0));
     };
 
+    const stepForError = (key: string): number => {
+        if (key === 'category' || key === 'style') {
+            return 0;
+        }
+
+        if (key === 'privacy_consent' || key === 'website') {
+            return 2;
+        }
+
+        return 1;
+    };
+
+    const handleServerErrors = (serverErrors: Record<string, string>) => {
+        const keys = Object.keys(serverErrors);
+
+        if (keys.length === 0) {
+            return;
+        }
+
+        // Validation errors used to land on a step the visitor could not see,
+        // which looked like the generator silently doing nothing.
+        setStep(Math.min(...keys.map(stepForError)));
+        setStepError('Brief belum bisa dibuat. Periksa isian yang ditandai.');
+        window.scrollTo({ top: 220, behavior: 'smooth' });
+    };
+
     const submit = (event: FormEvent) => {
         event.preventDefault();
 
@@ -182,7 +254,15 @@ export default function DesignIndex({
             return;
         }
 
-        form.post('/desain', { preserveScroll: true });
+        setStepError(null);
+
+        const options = { preserveScroll: true, onError: handleServerErrors };
+
+        if (brief) {
+            form.patch(`/desain/${brief.token}`, options);
+        } else {
+            form.post('/desain', options);
+        }
     };
 
     return (
@@ -194,23 +274,25 @@ export default function DesignIndex({
                     <Breadcrumbs items={[{ label: 'Beranda', href: '/' }, { label: 'Coba desain' }]} />
                     <div className="mt-4 grid gap-6 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
                         <div>
-                            <p className="eyebrow">Design preview</p>
+                            <p className="eyebrow">{editing ? 'Ubah brief' : 'Design preview'}</p>
                             <h1 className="mt-2 max-w-2xl font-display text-3xl font-extrabold tracking-tight text-navy sm:text-4xl">
-                                Lihat tiga arah desain sebelum membahas anggaran
+                                {editing ? 'Perbarui brief, lalu buat ulang preview' : 'Lihat tiga arah desain sebelum membahas anggaran'}
                             </h1>
                             <p className="mt-3 max-w-2xl text-[0.975rem] leading-relaxed text-muted-foreground">
-                                Isi brief singkat. Kami susun tiga opsi layout memakai nama, layanan, dan warna Anda — lengkap dengan
-                                preview yang bisa dibuka di desktop maupun ponsel.
+                                {editing
+                                    ? 'Ubah teks, layanan, warna, atau bagian yang tampil. Setelah disimpan, ketiga preview langsung memakai data terbaru dan tautan lama tetap berlaku.'
+                                    : 'Isi brief singkat. Kami susun tiga opsi layout memakai nama, layanan, dan warna Anda — lengkap dengan preview yang bisa dibuka di desktop maupun ponsel.'}
                             </p>
                         </div>
                         <div className="rounded-2xl border border-brand-100 bg-white p-4 text-sm text-ink/75 shadow-soft">
                             <p className="flex items-center gap-2 font-semibold text-navy">
                                 <Sparkles className="h-4 w-4 text-brand-600" aria-hidden="true" />
-                                Tanpa biaya, tanpa akun
+                                {editing ? 'Perubahan bersifat langsung' : 'Tanpa biaya, tanpa akun'}
                             </p>
                             <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
-                                Preview memakai template, bukan AI. Teks yang Anda tulis yang tampil; bagian yang belum diisi ditandai
-                                sebagai placeholder.
+                                {editing
+                                    ? 'Preview memakai template, bukan AI. Teks yang Anda tulis yang tampil; bagian yang belum diisi ditandai sebagai placeholder.'
+                                    : 'Preview memakai template, bukan AI. Teks yang Anda tulis yang tampil; bagian yang belum diisi ditandai sebagai placeholder.'}
                             </p>
                         </div>
                     </div>
@@ -255,6 +337,20 @@ export default function DesignIndex({
                             className="mt-5 rounded-2xl border border-border bg-white p-5 shadow-soft sm:p-7"
                             noValidate
                         >
+                            {errorList.length > 0 ? (
+                                <div
+                                    role="alert"
+                                    aria-live="polite"
+                                    className="mb-5 rounded-xl border border-danger/20 bg-danger/5 px-4 py-3"
+                                >
+                                    <p className="text-sm font-semibold text-danger">Brief belum bisa dibuat. Periksa isian ini:</p>
+                                    <ul className="mt-1.5 list-disc space-y-0.5 pl-5 text-xs leading-relaxed text-danger">
+                                        {errorList.map((message) => (
+                                            <li key={message}>{message}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            ) : null}
                             {step === 0 ? (
                                 <div className="space-y-7">
                                     <fieldset>
@@ -459,9 +555,10 @@ export default function DesignIndex({
                                                     id="contact_whatsapp"
                                                     value={form.data.contact.whatsapp}
                                                     onChange={(event) => form.setData('contact', { ...form.data.contact, whatsapp: event.target.value })}
-                                                    placeholder="08xx xxxx xxxx"
+                                                    placeholder="0812 3456 7890"
                                                     className="mt-1"
                                                 />
+                                                <p className="mt-1 text-[0.7rem] text-muted-foreground">Angka, spasi, tanda hubung, atau awalan +.</p>
                                                 <InputError message={errors['contact.whatsapp']} className="mt-1" />
                                             </div>
                                             <div>
@@ -496,22 +593,65 @@ export default function DesignIndex({
 
                                     <fieldset>
                                         <legend className="text-sm font-medium text-navy">Bagian yang ingin ditampilkan</legend>
-                                        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                                            {sections.map((section) => (
-                                                <label
-                                                    key={section.key}
-                                                    className={cn(
-                                                        'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm',
-                                                        form.data.sections.includes(section.key) ? 'border-brand-200 bg-brand-50/60 text-navy' : 'border-border text-muted-foreground',
-                                                    )}
-                                                >
-                                                    <Checkbox
-                                                        checked={form.data.sections.includes(section.key)}
-                                                        onCheckedChange={() => toggleSection(section.key)}
-                                                    />
-                                                    {section.label}
-                                                </label>
-                                            ))}
+                                        <p className="field-hint">Urutan di bawah adalah urutan tampil di preview. Gunakan panah untuk menggeser.</p>
+                                        <div className="mt-3 flex flex-col gap-2">
+                                            {orderedSections.map((section, index) => {
+                                                const locked = section.key === 'hero';
+                                                const selected = section.selected;
+
+                                                return (
+                                                    <div
+                                                        key={section.key}
+                                                        className={cn(
+                                                            'flex items-center gap-2 rounded-lg border px-3 py-2 text-sm',
+                                                            selected ? 'border-brand-200 bg-brand-50/60 text-navy' : 'border-border text-muted-foreground',
+                                                        )}
+                                                    >
+                                                        <Checkbox
+                                                            id={`section_${section.key}`}
+                                                            checked={selected}
+                                                            disabled={locked}
+                                                            onCheckedChange={() => toggleSection(section.key)}
+                                                        />
+                                                        <Label
+                                                            htmlFor={`section_${section.key}`}
+                                                            className={cn(
+                                                                'flex-1 text-sm font-normal',
+                                                                locked ? 'cursor-default' : 'cursor-pointer',
+                                                            )}
+                                                        >
+                                                            {section.label}
+                                                            {locked ? (
+                                                                <span className="ml-1 text-[0.65rem] text-muted-foreground">(selalu tampil)</span>
+                                                            ) : null}
+                                                        </Label>
+                                                        {locked ? (
+                                                            <span className="text-[0.65rem] text-muted-foreground">Paling atas</span>
+                                                        ) : selected ? (
+                                                            <div className="flex items-center gap-1">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => moveSection(section.key, -1)}
+                                                                    disabled={index <= 1}
+                                                                    aria-label={`Naikkan ${section.label}`}
+                                                                    className="rounded p-1 text-muted-foreground transition-colors hover:bg-white hover:text-navy disabled:opacity-25"
+                                                                >
+                                                                    <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => moveSection(section.key, 1)}
+                                                                    disabled={index >= form.data.sections.length - 1}
+                                                                    aria-label={`Turunkan ${section.label}`}
+                                                                    className="rounded p-1 text-muted-foreground transition-colors hover:bg-white hover:text-navy disabled:opacity-25"
+                                                                >
+                                                                    <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+                                                                </button>
+                                                            </div>
+                                                        ) : null}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                         <InputError message={errors.sections} className="mt-2" />
                                     </fieldset>
@@ -602,17 +742,25 @@ export default function DesignIndex({
                                         Kembali
                                     </Button>
                                 ) : (
-                                    <p className="text-xs text-muted-foreground">Butuh waktu ±2 menit.</p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {editing ? 'Tautan preview tetap sama setelah disimpan.' : 'Butuh waktu ±2 menit.'}
+                                    </p>
                                 )}
 
                                 {step < STEPS.length - 1 ? (
-                                    <Button type="button" onClick={next} className="rounded-xl">
+                                    <Button key="step-next" type="button" onClick={next} className="rounded-xl">
                                         Lanjut
                                         <ArrowRight className="h-4 w-4" aria-hidden="true" />
                                     </Button>
                                 ) : (
-                                    <Button type="submit" disabled={form.processing} className="rounded-xl">
-                                        {form.processing ? 'Menyusun preview…' : 'Buat 3 opsi desain'}
+                                    <Button key="step-submit" type="submit" disabled={form.processing} className="rounded-xl">
+                                        {editing
+                                            ? form.processing
+                                                ? 'Menyimpan…'
+                                                : 'Simpan perubahan'
+                                            : form.processing
+                                              ? 'Menyusun preview…'
+                                              : 'Buat 3 opsi desain'}
                                         <Sparkles className="h-4 w-4" aria-hidden="true" />
                                     </Button>
                                 )}
