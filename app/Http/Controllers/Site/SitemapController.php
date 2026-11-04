@@ -22,6 +22,7 @@ class SitemapController extends Controller
             ['loc' => url('/portfolio'), 'changefreq' => 'weekly', 'priority' => '0.9'],
             ['loc' => url('/tentang-kami'), 'changefreq' => 'monthly', 'priority' => '0.6'],
             ['loc' => url('/kontak'), 'changefreq' => 'yearly', 'priority' => '0.6'],
+            ['loc' => url('/kalkulator'), 'changefreq' => 'monthly', 'priority' => '0.8'],
             ['loc' => url('/desain'), 'changefreq' => 'monthly', 'priority' => '0.8'],
         ]);
 

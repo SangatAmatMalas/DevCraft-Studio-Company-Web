@@ -70,6 +70,11 @@ export default function SiteFooter() {
                             </Link>
                         </li>
                         <li>
+                            <Link href="/kalkulator" className="transition-colors hover:text-white">
+                                Kalkulator biaya
+                            </Link>
+                        </li>
+                        <li>
                             <Link href="/desain" className="transition-colors hover:text-white">
                                 Preview desain
                             </Link>

@@ -53,14 +53,15 @@ class ServiceController extends Controller
                 $service->meta_description ?: $service->summary,
                 url('/layanan/'.$service->slug),
                 'website',
-                [
+                array_filter([
                     Seo::service($service->title, $service->summary, url('/layanan/'.$service->slug)),
                     Seo::breadcrumbs([
                         'Beranda' => url('/'),
                         'Layanan' => url('/layanan'),
                         $service->title => url('/layanan/'.$service->slug),
                     ]),
-                ],
+                    Seo::faqPage($service->faqs ?? []),
+                ]),
             ),
         ]);
     }

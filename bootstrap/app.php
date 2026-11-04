@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             SecurityHeaders::class,
+            \App\Http\Middleware\CaptureAttribution::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             RedirectLegacySlugs::class,

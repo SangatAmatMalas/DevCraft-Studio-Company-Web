@@ -3,6 +3,7 @@
 use App\Http\Controllers\Site\AboutController;
 use App\Http\Controllers\Site\AnalyticsController;
 use App\Http\Controllers\Site\ContactController;
+use App\Http\Controllers\Site\CostEstimatorController;
 use App\Http\Controllers\Site\DesignPreviewController;
 use App\Http\Controllers\Site\HomeController;
 use App\Http\Controllers\Site\PackageController;
@@ -33,6 +34,9 @@ Route::get('/kontak', [ContactController::class, 'show'])->name('kontak');
 Route::post('/kontak', [ContactController::class, 'store'])
     ->middleware('throttle:lead-submissions')
     ->name('kontak.store');
+
+Route::get('/kalkulator', [CostEstimatorController::class, 'index'])->name('kalkulator');
+Route::permanentRedirect('/estimasi', '/kalkulator');
 
 // Template-based design previews (no AI, no uploads). Briefs are temporary
 // and never indexed; see SecurityHeaders for the noindex response header.

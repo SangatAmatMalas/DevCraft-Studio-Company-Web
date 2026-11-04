@@ -115,12 +115,22 @@ export default function Contact({ services, packages, projects, prefill, designB
     function submit(event: FormEvent) {
         event.preventDefault();
 
-        form.transform((data) => ({
-            ...data,
-            source_url: typeof window !== 'undefined' ? window.location.href : '',
-            package_id: data.package_id === '' ? null : data.package_id,
-            portfolio_project_id: data.portfolio_project_id === '' ? null : data.portfolio_project_id,
-        }));
+        form.transform((data) => {
+            const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+
+            return {
+                ...data,
+                source_url: typeof window !== 'undefined' ? window.location.href : '',
+                package_id: data.package_id === '' ? null : data.package_id,
+                portfolio_project_id: data.portfolio_project_id === '' ? null : data.portfolio_project_id,
+                utm_source: params?.get('utm_source') ?? null,
+                utm_medium: params?.get('utm_medium') ?? null,
+                utm_campaign: params?.get('utm_campaign') ?? null,
+                utm_term: params?.get('utm_term') ?? null,
+                utm_content: params?.get('utm_content') ?? null,
+                referrer: typeof document !== 'undefined' && document.referrer ? document.referrer : null,
+            };
+        });
 
         form.post('/kontak', {
             preserveScroll: true,

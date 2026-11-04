@@ -102,6 +102,15 @@ class ContactController extends Controller
             $preferredContact = filled($email) ? 'email' : (filled($phone) ? 'whatsapp' : null);
         }
 
+        $sessionAttribution = $request->hasSession() ? (array) $request->session()->get('lead_attribution', []) : [];
+
+        $utmSource = $request->input('utm_source') ?: ($sessionAttribution['utm_source'] ?? null);
+        $utmMedium = $request->input('utm_medium') ?: ($sessionAttribution['utm_medium'] ?? null);
+        $utmCampaign = $request->input('utm_campaign') ?: ($sessionAttribution['utm_campaign'] ?? null);
+        $utmTerm = $request->input('utm_term') ?: ($sessionAttribution['utm_term'] ?? null);
+        $utmContent = $request->input('utm_content') ?: ($sessionAttribution['utm_content'] ?? null);
+        $referrer = $request->input('referrer') ?: ($sessionAttribution['referrer'] ?? null);
+
         $lead = Lead::query()->create([
             'name' => $request->string('name')->toString(),
             'email' => $email,
@@ -118,6 +127,12 @@ class ContactController extends Controller
             'source_url' => $request->input('source_url') ?: url()->previous(),
             'reference_url' => $request->input('reference_url'),
             'source_type' => $brief ? 'design_preview' : ($request->input('source_type') ?: 'contact_page'),
+            'utm_source' => $utmSource,
+            'utm_medium' => $utmMedium,
+            'utm_campaign' => $utmCampaign,
+            'utm_term' => $utmTerm,
+            'utm_content' => $utmContent,
+            'referrer' => $referrer,
             'status' => 'new',
             'privacy_consent_at' => now(),
             'ip_hash' => hash('sha256', ($request->ip() ?? 'unknown').config('app.key')),

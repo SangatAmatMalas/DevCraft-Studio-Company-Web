@@ -36,6 +36,12 @@ interface LeadDetail {
     source_url: string | null;
     reference_url: string | null;
     source_type: string | null;
+    utm_source: string | null;
+    utm_medium: string | null;
+    utm_campaign: string | null;
+    utm_term: string | null;
+    utm_content: string | null;
+    referrer: string | null;
     status: string;
     status_label: string;
     next_follow_up_at: string | null;
@@ -274,6 +280,49 @@ export default function LeadShow({
                         </div>
                     </Panel>
 
+                    {lead.utm_source || lead.utm_medium || lead.utm_campaign || lead.referrer ? (
+                        <Panel title="Atribusi pemasaran" description="Sumber kampanye dan rujukan lead." bodyClassName="p-5">
+                            <dl className="grid gap-3 sm:grid-cols-2">
+                                {lead.utm_source ? (
+                                    <div>
+                                        <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">UTM Source</dt>
+                                        <dd className="mt-0.5 text-sm font-medium text-navy">{lead.utm_source}</dd>
+                                    </div>
+                                ) : null}
+                                {lead.utm_medium ? (
+                                    <div>
+                                        <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">UTM Medium</dt>
+                                        <dd className="mt-0.5 text-sm font-medium text-navy">{lead.utm_medium}</dd>
+                                    </div>
+                                ) : null}
+                                {lead.utm_campaign ? (
+                                    <div>
+                                        <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">UTM Campaign</dt>
+                                        <dd className="mt-0.5 text-sm font-medium text-navy">{lead.utm_campaign}</dd>
+                                    </div>
+                                ) : null}
+                                {lead.utm_term ? (
+                                    <div>
+                                        <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">UTM Term</dt>
+                                        <dd className="mt-0.5 text-sm font-medium text-navy">{lead.utm_term}</dd>
+                                    </div>
+                                ) : null}
+                                {lead.utm_content ? (
+                                    <div>
+                                        <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">UTM Content</dt>
+                                        <dd className="mt-0.5 text-sm font-medium text-navy">{lead.utm_content}</dd>
+                                    </div>
+                                ) : null}
+                                {lead.referrer ? (
+                                    <div className="sm:col-span-2">
+                                        <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Referrer Awal</dt>
+                                        <dd className="mt-0.5 break-all text-sm font-medium text-navy">{lead.referrer}</dd>
+                                    </div>
+                                ) : null}
+                            </dl>
+                        </Panel>
+                    ) : null}
+
                     {lead.attachments.length > 0 ? (
                         <Panel title="Lampiran" description="File yang dikirim bersama brief." bodyClassName="p-5">
                             <ul className="space-y-2">
@@ -464,33 +513,66 @@ export default function LeadShow({
                     >
                         {templates.length > 0 ? (
                             <ul className="space-y-3">
-                                {templates.map((template) => (
-                                    <li key={template.id} className="rounded-xl border border-border p-3">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <p className="text-sm font-semibold text-navy">{template.title}</p>
-                                            <button
-                                                type="button"
-                                                onClick={() => copyTemplate(template)}
-                                                className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-50"
-                                            >
-                                                {copiedId === template.id ? (
-                                                    <>
-                                                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                                                        Tersalin
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-                                                        Salin
-                                                    </>
-                                                )}
-                                            </button>
-                                        </div>
-                                        <p className="mt-1.5 line-clamp-4 whitespace-pre-line text-xs leading-relaxed text-muted-foreground">
-                                            {template.body}
-                                        </p>
-                                    </li>
-                                ))}
+                                {templates.map((template) => {
+                                    const templateWaUrl = whatsappNumber
+                                        ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(template.body)}`
+                                        : null;
+                                    const templateMailUrl = lead.email
+                                        ? `mailto:${lead.email}?subject=${encodeURIComponent(`Tindak lanjut brief — ${lead.name}`)}&body=${encodeURIComponent(template.body)}`
+                                        : null;
+
+                                    return (
+                                        <li key={template.id} className="rounded-xl border border-border p-3">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <p className="text-sm font-semibold text-navy">{template.title}</p>
+                                                <div className="flex shrink-0 items-center gap-1">
+                                                    {templateWaUrl ? (
+                                                        <a
+                                                            href={templateWaUrl}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-1 rounded-lg border border-success/30 bg-success/5 px-2 py-1 text-xs font-semibold text-success hover:bg-success/15"
+                                                            title="Kirim via WhatsApp"
+                                                        >
+                                                            <MessageCircle className="h-3.5 w-3.5" aria-hidden="true" />
+                                                            Kirim WA
+                                                        </a>
+                                                    ) : null}
+                                                    {templateMailUrl ? (
+                                                        <a
+                                                            href={templateMailUrl}
+                                                            className="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs font-semibold text-ink/75 hover:bg-ice"
+                                                            title="Kirim via Email"
+                                                        >
+                                                            <Mail className="h-3.5 w-3.5" aria-hidden="true" />
+                                                            Email
+                                                        </a>
+                                                    ) : null}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => copyTemplate(template)}
+                                                        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-50"
+                                                    >
+                                                        {copiedId === template.id ? (
+                                                            <>
+                                                                <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                                                                Tersalin
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+                                                                Salin
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <p className="mt-1.5 line-clamp-4 whitespace-pre-line text-xs leading-relaxed text-muted-foreground">
+                                                {template.body}
+                                            </p>
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         ) : (
                             <p className="text-xs text-muted-foreground">

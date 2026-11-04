@@ -71,7 +71,10 @@ class HomeController extends Controller
                 Settings::get('seo_default_description'),
                 url('/'),
                 'website',
-                [Seo::organization()],
+                array_filter([
+                    Seo::organization(),
+                    Seo::faqPage($faqs->map(fn (Faq $f) => ['question' => $f->question, 'answer' => $f->answer])->all()),
+                ]),
             ),
         ]);
     }

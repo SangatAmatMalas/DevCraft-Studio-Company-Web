@@ -19,6 +19,7 @@ const NAV = [
 const SECONDARY_NAV = [
     { label: 'Tentang Kami', href: '/tentang-kami' },
     { label: 'Tim', href: '/tim' },
+    { label: 'Kalkulator Biaya', href: '/kalkulator' },
     { label: 'Kebijakan Privasi', href: '/kebijakan-privasi' },
 ];
 

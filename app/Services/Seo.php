@@ -100,6 +100,78 @@ class Seo
         ];
     }
 
+    /**
+     * Build an FAQPage Schema.org structured data array.
+     *
+     * @param  array<int, array{question?: string, answer?: string}|mixed>  $faqs
+     * @return array<string, mixed>|null
+     */
+    public static function faqPage(array $faqs): ?array
+    {
+        $entities = [];
+
+        foreach ($faqs as $faq) {
+            $question = is_array($faq) ? trim((string) ($faq['question'] ?? '')) : '';
+            $answer = is_array($faq) ? trim((string) ($faq['answer'] ?? '')) : '';
+
+            if ($question === '' || $answer === '') {
+                continue;
+            }
+
+            $entities[] = [
+                '@type' => 'Question',
+                'name' => $question,
+                'acceptedAnswer' => [
+                    '@type' => 'Answer',
+                    'text' => strip_tags($answer),
+                ],
+            ];
+        }
+
+        if ($entities === []) {
+            return null;
+        }
+
+        return [
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'mainEntity' => $entities,
+        ];
+    }
+
+    /**
+     * Build a Service offer Schema.org structured data array for a package.
+     *
+     * @return array<string, mixed>
+     */
+    public static function packageOffer(\App\Models\Package $package): array
+    {
+        $offer = [
+            '@type' => 'Offer',
+            'url' => url('/paket/'.$package->slug),
+            'priceCurrency' => $package->currency ?: 'IDR',
+            'availability' => 'https://schema.org/InStock',
+        ];
+
+        if ($package->price_amount !== null && $package->price_amount > 0) {
+            $offer['price'] = (int) $package->price_amount;
+        }
+
+        return array_filter([
+            '@context' => 'https://schema.org',
+            '@type' => 'Service',
+            'name' => $package->name,
+            'description' => $package->tagline ?: $package->name,
+            'url' => url('/paket/'.$package->slug),
+            'provider' => [
+                '@type' => 'Organization',
+                'name' => Settings::get('brand_name'),
+                'url' => url('/'),
+            ],
+            'offers' => $offer,
+        ]);
+    }
+
     /** @return array<string, mixed> */
     public static function creativeWork(string $name, string $description, string $url, ?string $image = null): array
     {

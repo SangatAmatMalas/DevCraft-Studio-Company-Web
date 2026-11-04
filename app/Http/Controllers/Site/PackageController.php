@@ -90,6 +90,7 @@ class PackageController extends Controller
                         'Paket' => url('/paket'),
                         $package->name => url('/paket/'.$package->slug),
                     ]),
+                    Seo::packageOffer($package),
                 ],
             ),
         ]);

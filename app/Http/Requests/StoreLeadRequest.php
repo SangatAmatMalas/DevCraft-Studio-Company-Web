@@ -54,6 +54,12 @@ class StoreLeadRequest extends FormRequest
             'privacy_consent' => ['accepted'],
             'source_url' => ['nullable', 'string', 'max:500'],
             'source_type' => ['nullable', 'string', 'max:40'],
+            'utm_source' => ['nullable', 'string', 'max:100'],
+            'utm_medium' => ['nullable', 'string', 'max:100'],
+            'utm_campaign' => ['nullable', 'string', 'max:150'],
+            'utm_term' => ['nullable', 'string', 'max:150'],
+            'utm_content' => ['nullable', 'string', 'max:150'],
+            'referrer' => ['nullable', 'string', 'max:500'],
             'design_brief' => ['nullable', 'string', 'max:64'],
             // Honeypot: must stay empty.
             'website' => ['nullable', 'string', 'max:0'],

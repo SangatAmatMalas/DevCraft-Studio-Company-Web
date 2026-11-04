@@ -38,6 +38,14 @@ export function formatBytes(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+export function formatCurrency(amount: number, currency: string = 'IDR'): string {
+    return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency,
+        maximumFractionDigits: 0,
+    }).format(amount);
+}
+
 export function formatDateTime(value: string | null | undefined): string {
     if (!value) {
         return '';

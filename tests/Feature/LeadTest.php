@@ -114,6 +114,42 @@ it('does not send a confirmation email to a phone-only lead', function () {
     Mail::assertNotSent(LeadReceivedConfirmation::class);
 });
 
+it('captures UTM parameters and referrer on lead submission', function () {
+    $this->post('/kontak', validLeadPayload([
+        'utm_source' => 'google',
+        'utm_medium' => 'cpc',
+        'utm_campaign' => 'web_umkm_2026',
+        'utm_term' => 'jasa pembuatan website',
+        'utm_content' => 'cta_hero',
+        'referrer' => 'https://www.google.com/search?q=jasa+pembuatan+website',
+    ]))->assertRedirect('/kontak');
+
+    $lead = Lead::query()->firstOrFail();
+
+    expect($lead->utm_source)->toBe('google')
+        ->and($lead->utm_medium)->toBe('cpc')
+        ->and($lead->utm_campaign)->toBe('web_umkm_2026')
+        ->and($lead->utm_term)->toBe('jasa pembuatan website')
+        ->and($lead->utm_content)->toBe('cta_hero')
+        ->and($lead->referrer)->toBe('https://www.google.com/search?q=jasa+pembuatan+website');
+});
+
+it('captures session attribution from initial landing query', function () {
+    // Visit home page with UTM parameters
+    $this->get('/?utm_source=instagram&utm_medium=bio&utm_campaign=launch_promo')
+        ->assertOk();
+
+    // User navigates and submits the contact form without direct UTM in form
+    $this->post('/kontak', validLeadPayload())
+        ->assertRedirect('/kontak');
+
+    $lead = Lead::query()->firstOrFail();
+
+    expect($lead->utm_source)->toBe('instagram')
+        ->and($lead->utm_medium)->toBe('bio')
+        ->and($lead->utm_campaign)->toBe('launch_promo');
+});
+
 it('silently rejects honeypot submissions', function () {
     $this->post('/kontak', validLeadPayload(['website' => 'https://spam.example']))
         ->assertSessionHasErrors('website');
